@@ -107,7 +107,7 @@ window.MotherLayer = (function () {
 			.attr("stroke-width", 2)
 			.attr("d", `
 			  M ${m.x},${m.y + 60}
-			  V ${yBranch-20}
+			  V ${yBranch-60}
 			`);
 
 		  // 2️⃣ Đường ngang CHUNG nối các con
@@ -179,6 +179,7 @@ window.MotherLayer = (function () {
   };
 
 })();
+
 
 
 
