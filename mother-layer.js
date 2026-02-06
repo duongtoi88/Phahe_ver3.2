@@ -91,18 +91,50 @@ window.MotherLayer = (function () {
         `);
 
       // MẸ → CON (2/3 d)
-      m.children.forEach(c => {
-        g.append("path")
-          .attr("class", "link link-mother-child")
-          .attr("fill", "none")
-          .attr("stroke", "#555")
-          .attr("stroke-width", 2)
-          .attr("d", `
-            M ${m.x},${m.y+60}
-            V ${c.y-60}
-            H ${c.x}
-          `);
-      });
+    // ===== MẸ → CÁC CON (VẼ 1 TRỤC CHUNG) =====
+		if (m.children.length > 0) {
+		  const children = m.children;
+
+		  const yBranch = m.y + (children[0].y - m.y) / 2;
+
+		  const minX = Math.min(...children.map(c => c.x));
+		  const maxX = Math.max(...children.map(c => c.x));
+
+		  // 1️⃣ Trục dọc từ mẹ xuống đường ngang
+		  g.append("path")
+			.attr("class", "link link-mother-branch")
+			.attr("fill", "none")
+			.attr("stroke", "#555")
+			.attr("stroke-width", 2)
+			.attr("d", `
+			  M ${m.x},${m.y + NODE_HALF_HEIGHT}
+			  V ${yBranch}
+			`);
+
+		  // 2️⃣ Đường ngang CHUNG nối các con
+		  g.append("path")
+			.attr("class", "link link-children-horizontal")
+			.attr("fill", "none")
+			.attr("stroke", "#555")
+			.attr("stroke-width", 2)
+			.attr("d", `
+			  M ${minX},${yBranch}
+			  H ${maxX}
+			`);
+
+		  // 3️⃣ Các nhánh dọc từ đường ngang xuống từng con
+		  children.forEach(c => {
+			g.append("path")
+			  .attr("class", "link link-child-vertical")
+			  .attr("fill", "none")
+			  .attr("stroke", "#555")
+			  .attr("stroke-width", 2)
+			  .attr("d", `
+				M ${c.x},${yBranch}
+				V ${c.y - NODE_HALF_HEIGHT}
+			  `);
+		  });
+		}
     });
   }
 
