@@ -39,7 +39,13 @@
       el.id = 'loadingMessage';
       el.style.padding = '8px';
       el.style.fontSize = '13px';
-      document.body.insertBefore(el, $('tree-container'));
+      // Insert before tree-container if possible, otherwise append to tree-container's parent or body
+      const ref = $('tree-container');
+      if (ref && ref.parentNode) {
+        ref.parentNode.insertBefore(el, ref);
+      } else {
+        document.body.appendChild(el);
+      }
     }
     el.textContent = msg;
   }
