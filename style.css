@@ -1,112 +1,52 @@
-/* =========================
-   RESET CƠ BẢN
-========================= */
-* {
-  box-sizing: border-box;
-}
-
 body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background: #ffffff;
-  color: #111;
+  font-family: Arial;
+  text-align: center;
 }
-
-h1 {
-  margin: 12px;
-}
-
-/* =========================
-   CONTAINER CÂY
-========================= */
-#tree-container {
-  width: 100%;
-  height: calc(100vh - 160px);
-  overflow: auto;
+#tree-container svg {
   border: 1px solid #ccc;
-  background: #fff;
+  margin-top: 20px;
+}
+/* Màu sắc node đặc biệt theo Đinh */
+.node rect {
+  transition: fill 0.3s ease;
 }
 
-/* =========================
-   LINK CHA → CON (TREE GỐC)
-========================= */
+.node rect.dinh-x {
+  fill: #c3e6cb; /* Màu xanh nhạt */
+  stroke: #155724;
+}
+
+.node rect.dinh-thuong {
+  fill: #ffffff; /* Màu trắng */
+  stroke: #0c5460;
+}
+.node text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 12px;
+  dominant-baseline: middle;
+}
 .link {
   fill: none;
-  stroke: #777;
-  stroke-width: 2;
+  stroke: #999;
+  stroke-width: 1.5px;
 }
-
-/* =========================
-   NODE TREE (CHA / CON)
-========================= */
-.node rect {
-  fill: #ffffff;
-  stroke: #333;
-  stroke-width: 1.2;
-}
-
-.node text {
-  fill: #000;
-  font-size: 12px;
-  text-anchor: middle;
+.tooltip {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #aaa;
+  padding: 10px;
+  font-size: 14px;
   pointer-events: none;
-  user-select: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
-
-/* =========================
-   NAM ĐINH
-========================= */
-.node.dinh-x rect {
-  fill: #c8e6c9;          /* xanh nhạt */
-  stroke: #2e7d32;
-}
-
-/* =========================
-   NỮ / THƯỜNG
-========================= */
-.node.dinh-thuong rect {
-  fill: #ffffff;
-  stroke: #1565c0;
-}
-
-/* =========================
-   NODE MẸ (OVERLAY RIÊNG)
-========================= */
-.mother-node rect {
-  fill: #ffe6ee;          /* hồng nhạt */
+/* ===== Mother node – ver 3.2 ===== */
+.mother-rect {
+  fill: #ffe6f0;
   stroke: #c2185b;
-  stroke-width: 1.5;
 }
 
 .mother-node text {
-  fill: #880e4f;
-  font-size: 12px;
-  font-weight: 500;
-  pointer-events: none;
-}
-
-/* =========================
-   TOOLTIP
-========================= */
-#tooltip {
-  position: absolute;
-  display: none;
-  background: #ffffff;
-  border: 1px solid #333;
-  border-radius: 4px;
-  padding: 8px 10px;
-  font-size: 12px;
-  line-height: 1.4;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-  z-index: 9999;
-  max-width: 260px;
-}
-
-/* =========================
-   SELECT + CHECKBOX
-========================= */
-select,
-input[type="checkbox"] {
-  margin: 6px;
-  font-size: 14px;
+  writing-mode: vertical-rl;
+  font-size: 11px;
 }

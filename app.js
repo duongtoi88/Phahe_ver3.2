@@ -1,22 +1,6 @@
-// =====================================================
-// Helper: đọc cột Excel an toàn với Unicode (ID mẹ, ID cha, …)
-// DÁN NGAY TRÊN CÙNG – KHÔNG PHÁ LOGIC CŨ
-// =====================================================
-function getValue(row, key) {
-  const target = key.normalize("NFC");
-  for (const k in row) {
-    if (k.normalize("NFC") === target) {
-      return row[k];
-    }
-  }
-  return null;
-}
-
-// =====================================================
 // Tự động đọc file Excel khi trang vừa load
-// =====================================================
 window.onload = () => {
-  fetch('input.xlsx')
+  fetch('https://duongtoi88.github.io/Pha_he/input.xlsx')
     .then(res => res.arrayBuffer())
     .then(data => {
       const workbook = XLSX.read(data, { type: 'array' });
@@ -26,17 +10,13 @@ window.onload = () => {
       window.rawRows = json;
 
       // Tạo dropdown chọn ID gốc (Đinh x)
-      const rootIDs = json
-        .filter(r => r["Đinh"] === "x")
-        .map(r => String(r.ID).replace('.0', ''));
-
+      const rootIDs = json.filter(r => r.Đinh === "x").map(r => String(r.ID).replace('.0', ''));
       const select = document.createElement("select");
       select.id = "rootSelector";
       select.style.marginBottom = "10px";
 
       rootIDs.forEach(id => {
         const r = json.find(p => String(p.ID).replace('.0', '') === id);
-        if (!r) return;
         const opt = document.createElement("option");
         opt.value = id;
         opt.text = `${r["Họ và tên"]} (Đời ${r["Đời"] || "-"})`;
@@ -53,10 +33,7 @@ window.onload = () => {
       };
 
       // Thêm vào DOM
-      document.body.insertBefore(
-        select,
-        document.getElementById("tree-container")
-      );
+      document.body.insertBefore(select, document.getElementById("tree-container"));
 
       // Sự kiện tick "Cả Nam & Nữ"
       document.getElementById("showGirls").onchange = () => {
@@ -77,9 +54,7 @@ window.onload = () => {
     });
 };
 
-// =====================================================
-// Duyệt cây con từ ID gốc (LOGIC GỐC – KHÔNG ĐỔI)
-// =====================================================
+// Duyệt cây con từ ID gốc
 function convertToSubTree(rows, rootID, includeGirls = false) {
   const people = {};
   const validIDs = new Set();
@@ -92,15 +67,9 @@ function convertToSubTree(rows, rootID, includeGirls = false) {
       birth: row["Năm sinh"] || "",
       death: row["Năm mất"] || "",
       info: row["Thông tin chi tiết"] || "",
-      father: getValue(row, "ID cha")
-        ? String(getValue(row, "ID cha")).replace('.0', '')
-        : null,
-      mother: getValue(row, "ID mẹ")
-        ? String(getValue(row, "ID mẹ")).replace('.0', '')
-        : null,
-      spouse: row["ID chồng"]
-        ? String(row["ID chồng"]).replace('.0', '')
-        : null,
+      father: row["ID cha"] ? String(row["ID cha"]).replace('.0', '') : null,
+      mother: row["ID mẹ"] ? String(row["ID mẹ"]).replace('.0', '') : null,
+      spouse: row["ID chồng"] ? String(row["ID chồng"]).replace('.0', '') : null,
       doi: row["Đời"] || "",
       dinh: row["Đinh"] || "",
       children: []
@@ -116,9 +85,7 @@ function convertToSubTree(rows, rootID, includeGirls = false) {
 
     rows.forEach(r => {
       const childID = String(r.ID).replace('.0', '');
-      const fatherID = getValue(r, "ID cha")
-        ? String(getValue(r, "ID cha")).replace('.0', '')
-        : null;
+      const fatherID = r["ID cha"] ? String(r["ID cha"]).replace('.0', '') : null;
 
       if (fatherID === id) {
         if (includeGirls || r["Đinh"] === "x") {
@@ -129,21 +96,18 @@ function convertToSubTree(rows, rootID, includeGirls = false) {
   }
 
   collectDescendants(rootID);
+// ✅ Nếu tick "Cả Nam & Nữ" → thêm vợ của các thành viên nam
+if (includeGirls) {
+  const extraSpouses = rows.filter(r => {
+    const idChong = String(r["ID chồng"] || "").replace('.0', '');
+    return validIDs.has(idChong); // người chồng đã trong cây
+  });
 
-  // Nếu tick "Cả Nam & Nữ" → thêm vợ của các thành viên nam
-  if (includeGirls) {
-    const extraSpouses = rows.filter(r => {
-      const idChong = r["ID chồng"]
-        ? String(r["ID chồng"]).replace('.0', '')
-        : "";
-      return validIDs.has(idChong);
-    });
-
-    extraSpouses.forEach(r => {
-      const id = String(r.ID).replace('.0', '');
-      validIDs.add(id);
-    });
-  }
+  extraSpouses.forEach(r => {
+    const id = String(r.ID).replace('.0', '');
+    validIDs.add(id);
+  });
+}
 
   const treePeople = {};
   validIDs.forEach(id => {
@@ -165,4 +129,148 @@ function convertToSubTree(rows, rootID, includeGirls = false) {
   });
 
   return treePeople[rootID];
+  window.peopleMap = people;
+}
+
+// Vẽ cây phả hệ bằng D3.js
+function drawTree(data) {
+  const root = d3.hierarchy(data);
+
+  // Thiết lập layout dạng cây
+  const nodeWidth = 120;
+  const nodeHeight = 200;
+  const treeLayout = d3.tree().nodeSize([nodeWidth, nodeHeight]);
+  treeLayout(root);
+
+  // Tính bounding box thực tế
+  const bounds = root.descendants().reduce(
+    (acc, d) => ({
+      x0: Math.min(acc.x0, d.x),
+      x1: Math.max(acc.x1, d.x),
+      y0: Math.min(acc.y0, d.y),
+      y1: Math.max(acc.y1, d.y)
+    }),
+    { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity }
+  );
+
+  const dx = bounds.x1 - bounds.x0;
+const dy = bounds.y1 - bounds.y0;
+const marginX = 100;
+const marginY = 100;
+const totalWidth = dx + marginX * 2; // rộng thực sự của cây
+
+  // Xoá cây cũ
+  d3.select("#tree-container").selectAll("svg").remove();
+
+  // Tạo SVG mới
+  const svg = d3.select("#tree-container").append("svg")
+    .attr("width", totalWidth)
+    .attr("height", dy + marginY + 300);
+  
+  const translateX = marginX - bounds.x0;
+  const translateY = marginY - bounds.y0;
+  const g = svg.append("g")
+    .attr("transform", `translate(${translateX}, ${translateY})`);
+
+  // Vẽ đường nối
+  g.selectAll(".link")
+    .data(root.links())
+    .enter()
+    .append("path")
+    .attr("class", "link")
+    .attr("fill", "none")
+    .attr("stroke", "#555")
+    .attr("stroke-width", 2)
+    .attr("d", d => {
+      const x1 = d.source.x;
+      const y1 = d.source.y;
+      const x2 = d.target.x;
+      const y2 = d.target.y;
+      const midY = (y1 + y2) / 2;
+      return `M ${x1},${y1} V ${midY} H ${x2} V ${y2}`;
+    });
+
+  // Vẽ các node
+  const node = g.selectAll(".node")
+    .data(root.descendants())
+    .enter()
+    .append("g")
+    .attr("class", "node")
+    .attr("transform", d => `translate(${d.x},${d.y})`)
+    .on("click", (event, d) => openDetailTab(d.data.id))
+    .on("mouseover", (event, d) => showQuickTooltip(event, d.data))
+    .on("mouseout", () => document.getElementById("tooltip").style.display = "none");
+
+  node.append("rect")
+    .attr("x", -40)
+    .attr("y", -60)
+    .attr("width", 80)
+    .attr("height", 120)
+    .attr("rx", 10)
+    .attr("ry", 10)
+    .attr("class", d => d.data.dinh === "x" ? "dinh-x" : "dinh-thuong");
+
+  node.append("text")
+    .attr("text-anchor", "middle")
+    .attr("transform", "translate(10, 0)")
+    .style("font-size", "12px")
+    .attr("fill", "black")
+    .text(d => d.data.name);
+
+  node.append("text")
+    .attr("text-anchor", "middle")
+    .attr("transform", "translate(-10, 0)")
+    .style("font-size", "12px")
+    .attr("fill", "black")
+    .text(d => (d.data.birth || "") + " - " + (d.data.death || ""));
+  
+  // Cuộn cây sao cho node gốc ra giữa màn hình
+    setTimeout(() => {
+    const container = document.getElementById("tree-container");
+    const svg = container.querySelector("svg");
+    if (!svg) return;
+  
+    const rootNode = d3.select(".node").datum();  // node đầu tiên là gốc
+    const gTransform = d3.select("g").attr("transform");
+    const parts = gTransform.replace("translate(", "").replace(")", "").split(",");
+    const translateX = parseFloat(parts[0]) || 0;
+  
+    const centerX = rootNode.x + translateX;
+    const scrollX = centerX - container.clientWidth / 2;
+    container.scrollLeft = scrollX;
+  }, 50);
+  // ===== VER 3.2: Vẽ node MẸ =====
+if (window.peopleMap && typeof renderMotherNodes === "function") {
+  renderMotherNodes(g, root.descendants(), window.peopleMap);
+}
+
+
+}
+
+// Tooltip ngắn khi hover
+function showQuickTooltip(event, data) {
+  const wives = window.rawRows.filter(r => {
+    const idChong = String(r["ID chồng"] || "").replace('.0', '');
+    return idChong === data.id;
+  });
+
+  const children = data.children || [];
+
+  const html = `
+    <div><b>${data.name || "-"}</b> – Đời ${data.doi || "-"}</div>
+    <div>${data.birth || "-"} – ${data.death || "-"}</div>
+    <div><b>Vợ/Chồng:</b> ${wives.length ? wives.map(w => `- ${w["Họ và tên"]}`).join("<br>") : "-"}</div>
+    <div><b>Con:</b> ${children.length ? children.map(c => `- ${c.name}`).join("<br>") : "-"}</div>
+  `;
+
+  const tooltip = document.getElementById("tooltip");
+  tooltip.innerHTML = html;
+  tooltip.style.display = 'block';
+  tooltip.style.left = (event.pageX + 10) + 'px';
+  tooltip.style.top = (event.pageY + 10) + 'px';
+  tooltip.style.textAlign = 'left';
+}
+// Click mở tab chi tiết
+function openDetailTab(id) {
+  window.location.href = `detail.html?id=${id}`;
 }
