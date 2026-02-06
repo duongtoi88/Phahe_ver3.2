@@ -1,7 +1,9 @@
 // =======================================
 // mother-nodes.js
-// FINAL FIX: node mẹ xoay dọc – layer riêng
-// KHÔNG remove node tree gốc
+// MẸ XOAY DỌC – KHÔNG LINK
+// - Giữ tree cha → con
+// - Mẹ là node hiển thị độc lập
+// - Hỗ trợ nhiều vợ
 // =======================================
 
 (function () {
@@ -9,32 +11,27 @@
   window.drawMotherNodes = drawMotherNodes;
 
   function drawMotherNodes() {
-    if (!window.treeRoot || !window.treeGroup || !window.rawRows) return;
+    if (!window.treeRoot || !window.treeGroup || !window.rawRows) {
+      return;
+    }
 
     const g = window.treeGroup;
     const rows = window.rawRows;
 
-    // ===== TẠO / RESET LAYER RIÊNG CHO MẸ =====
-    let motherLayer = g.select("g.mother-layer");
-    if (!motherLayer.empty()) {
-      motherLayer.remove();
-    }
-    motherLayer = g.append("g").attr("class", "mother-layer");
-
-    // ===== map raw rows theo ID =====
+    // map raw rows theo ID
     const peopleById = {};
     rows.forEach(r => {
       const id = String(r.ID).replace('.0', '');
       peopleById[id] = r;
     });
 
-    // ===== map node tree theo ID =====
+    // map node tree theo ID
     const nodeById = {};
     window.treeRoot.descendants().forEach(d => {
       nodeById[d.data.id] = d;
     });
 
-    // ===== gom mẹ theo cha =====
+    // gom mẹ theo cha
     const motherMap = {};
     window.treeRoot.descendants().forEach(d => {
       const fatherId = d.data.id;
@@ -49,14 +46,14 @@
       });
     });
 
-    // ===== vẽ node mẹ (XOAY DỌC – KHÔNG LINK) =====
+    // vẽ node mẹ (xoay dọc)
     Object.entries(motherMap).forEach(([fatherId, motherSet]) => {
       const fatherNode = nodeById[fatherId];
       if (!fatherNode) return;
 
       const motherIds = Array.from(motherSet);
-      const spacingX = 120;
-      const offsetY = 110;
+      const spacingX = 110;
+      const offsetY = 100;
 
       motherIds.forEach((motherId, index) => {
         const mother = peopleById[motherId];
@@ -67,7 +64,8 @@
           (index - (motherIds.length - 1) / 2) * spacingX;
         const y = fatherNode.y + offsetY;
 
-        const mg = motherLayer.append("g")
+        // ===== NODE MẸ (XOAY DỌC) =====
+        const mg = g.append("g")
           .attr("class", "node mother")
           .attr(
             "transform",
@@ -75,10 +73,10 @@
           );
 
         mg.append("rect")
-          .attr("x", -70)
-          .attr("y", -22)
-          .attr("width", 140)
-          .attr("height", 80)
+          .attr("x", -25)
+          .attr("y", -40)
+          .attr("width", 80)
+          .attr("height", 140)
           .attr("rx", 6)
           .attr("ry", 6);
 
