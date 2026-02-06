@@ -1,5 +1,6 @@
 // ================================
 // PHẢ HỆ – FAMILY NODE [CHA | MẸ]
+// NODE DỌC – TEXT XOAY DỌC
 // FULL app.js – D3 v7
 // ================================
 
@@ -81,8 +82,9 @@ function buildFamilyTree(families) {
 function drawTree(treeData) {
   d3.select("#tree-container").selectAll("svg").remove();
 
-  const nodeWidth = 180;
-  const nodeHeight = 120;
+  // 👉 THAM SỐ QUAN TRỌNG – CHỐNG GHI ĐÈ
+  const nodeWidth = 70;     // hẹp ngang
+  const nodeHeight = 180;  // cao dọc
 
   const root = d3.hierarchy(treeData, d => {
     if (d.type === "root") return d.children;
@@ -103,8 +105,8 @@ function drawTree(treeData) {
   const minY = d3.min(nodes, d => d.y);
   const maxY = d3.max(nodes, d => d.y);
 
-  const width = maxX - minX + 400;
-  const height = maxY - minY + 400;
+  const width = maxX - minX + 300;
+  const height = maxY - minY + 300;
 
   const svg = d3.select("#tree-container")
     .append("svg")
@@ -112,7 +114,7 @@ function drawTree(treeData) {
     .attr("height", height);
 
   const g = svg.append("g")
-    .attr("transform", `translate(${200 - minX},${200 - minY})`);
+    .attr("transform", `translate(${150 - minX},${150 - minY})`);
 
   // ---------- LINKS ----------
   g.selectAll(".link")
@@ -139,60 +141,4 @@ function drawTree(treeData) {
     .enter()
     .append("g")
     .attr("class", d => `node ${d.data.type}`)
-    .attr("transform", d => `translate(${d.x},${d.y})`);
-
-  // FAMILY NODE [CHA | MẸ]
-  const familyNode = node.filter(d => d.data.type === "family");
-
-  familyNode.append("rect")
-    .attr("x", -90)
-    .attr("y", -30)
-    .attr("width", 180)
-    .attr("height", 60)
-    .attr("rx", 8)
-    .attr("fill", "#e7f1ff")
-    .attr("stroke", "#0d6efd");
-
-  familyNode.append("line")
-    .attr("x1", 0).attr("y1", -25)
-    .attr("x2", 0).attr("y2", 25)
-    .attr("stroke", "#0d6efd");
-
-  familyNode.append("text")
-    .attr("x", -45)
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
-    .style("font-size", "12px")
-    .text(d => d.data.fatherName);
-
-  familyNode.append("text")
-    .attr("x", 45)
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
-    .style("font-size", "12px")
-    .text(d => d.data.motherName);
-
-  // CHILD NODE
-  const childNode = node.filter(d => d.data.type === "child");
-
-  childNode.append("rect")
-    .attr("x", -45)
-    .attr("y", -22)
-    .attr("width", 90)
-    .attr("height", 44)
-    .attr("rx", 6)
-    .attr("fill", "#ffffff")
-    .attr("stroke", "#333");
-
-  childNode.append("text")
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
-    .style("font-size", "12px")
-    .text(d => d.data.name);
-
-  // ---------- AUTO CENTER ----------
-  setTimeout(() => {
-    const container = document.getElementById("tree-container");
-    container.scrollLeft = (width - container.clientWidth) / 2;
-  }, 50);
-}
+    .
