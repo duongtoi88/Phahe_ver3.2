@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chi tiết Gia đình</title>
+
+  <base href="./" />
+
+  <!-- SheetJS -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f6f8;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .family-box {
+      border: 2px solid #0d6efd;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 20px;
+      background: #e7f1ff;
+    }
+
+    .parents {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .parent {
+      width: 48%;
+      padding: 10px;
+      background: #ffffff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .children {
+      margin-top: 20px;
+    }
+
+    .child {
+      padding: 8px 10px;
+      border-bottom: 1px dashed #ccc;
+    }
+
+    select {
+      padding: 6px;
+      font-size: 15px;
+      margin-bottom: 15px;
+    }
+
+    .btn-back {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 8px 14px;
+      background: #0d6efd;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Chi tiết Gia đình</h2>
+
+    <div>
+      <label><b>Chọn gia đình:</b></label><br />
+      <select id="familySelector"></select>
+    </div>
+
+    <div id="content">Đang tải...</div>
+
+    <a class="btn-back" href="index.html">← Quay lại sơ đồ</a>
+  </div>
+
+<script>
+let people = [];
+let families = [];
+
+fetch("input.xlsx")
+  .then(res => res.arrayBuffer())
+  .then(data => {
+    const wb = XLSX.read(data, { type: "array" });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet);
+
+    people = normalizeRows(rows);
+    families = buildFamilyNodes(people);
+
+    initSelector();
+    loadFromURL();
+  });
+
+function nor

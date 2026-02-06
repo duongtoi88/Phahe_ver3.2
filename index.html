@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Phả hệ – Family Node [Cha | Mẹ]</title>
+
+  <!-- Base nếu deploy GitHub Pages -->
+  <base href="./" />
+
+  <!-- SheetJS đọc Excel -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+  <!-- D3.js v7 -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <!-- App logic -->
+  <script defer src="app.js"></script>
+
+  <!-- Style -->
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    h2 {
+      margin: 10px;
+    }
+
+    #toolbar {
+      margin: 10px;
+    }
+
+    #tree-container {
+      width: 100%;
+      height: calc(100vh - 80px);
+      overflow: auto;
+      border-top: 1px solid #ccc;
+    }
+
+    /* FAMILY NODE */
+    .node.family rect {
+      fill: #e7f1ff;
+      stroke: #0d6efd;
+    }
+
+    /* CHILD NODE */
+    .node.child rect {
+      fill: #ffffff;
+      stroke: #333;
+    }
+
+    .link {
+      fill: none;
+      stroke: #777;
+      stroke-width: 1.5px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Phả hệ – Family Node [ Cha | Mẹ ]</h2>
+
+  <!-- Toolbar (để mở rộng về sau) -->
+  <div id="toolbar">
+    <!-- chừa sẵn cho Ver sau -->
+    <!-- Ví dụ: checkbox ẩn/hiện nhánh, tìm kiếm, export PDF -->
+  </div>
+
+  <!-- Tree -->
+  <div id="tree-container"></div>
+</body>
+</html>
