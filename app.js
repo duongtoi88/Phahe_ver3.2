@@ -203,7 +203,7 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
     .attr("stroke-width", 2)
     .attr("d", d => {
       const x1 = d.source.x;
-      const y1 = d.source.y;
+      const y1 = d.source.y +150;
       const x2 = d.target.x;
       const y2 = d.target.y;
       const midY = (y1 + y2) / 2;
