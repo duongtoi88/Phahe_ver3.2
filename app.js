@@ -1,9 +1,13 @@
 // Tự động đọc file Excel khi trang vừa load
-// ===== Layout constants =====
-const GAP_FATHER_MOTHER = 20;   // Cha → mẹ
-const MOTHER_HEIGHT = 160;      // Chiều cao node mẹ
-const GAP_MC_TOP = 20;          // Mẹ → con (đoạn dọc 1)
-const GAP_MC_BOTTOM = 100;      // Mẹ → con (đoạn dọc 2)
+
+// ===== Layout constants (GLOBAL) =====
+window.LayoutConfig = {
+  GAP_FATHER_MOTHER: 20,   // Cha → mẹ
+  MOTHER_HEIGHT: 160,      // Chiều cao node mẹ
+  GAP_MC_TOP: 20,          // Mẹ → con (đoạn dọc 1)
+  GAP_MC_BOTTOM: 100       // Mẹ → con (đoạn dọc 2)
+};
+
 
 window.onload = () => {
   fetch('https://duongtoi88.github.io/Phahe_ver3.2/input.xlsx')
@@ -191,7 +195,15 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
 	  const fatherBottomY = d.source.y + 60;
 
 	  // === CHA → MẸ ===
-	  const motherTopY = fatherBottomY + GAP_FATHER_MOTHER;
+	  const {
+		  GAP_FATHER_MOTHER,
+		  MOTHER_HEIGHT,
+		  GAP_MC_TOP,
+		  GAP_MC_BOTTOM
+		} = window.LayoutConfig;
+
+		const motherTopY = fatherBottomY + GAP_FATHER_MOTHER;
+
 	  const motherBottomY = motherTopY + MOTHER_HEIGHT;
 
 	  // === MẸ → CON ===

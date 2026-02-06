@@ -1,6 +1,9 @@
-// mother-nodes.js
-// FINAL – wives in ONE horizontal row
-// Geometry exactly as requested
+const {
+  GAP_FATHER_MOTHER,
+  MOTHER_HEIGHT,
+  GAP_MC_TOP,
+  GAP_MC_BOTTOM
+} = window.LayoutConfig;
 
 function renderMotherNodes(g, nodes, peopleMap) {
   if (!window.rawRows) return;
