@@ -16,7 +16,7 @@ window.MotherLayer = (function () {
 
     const mothers = collectMothers(root, d);
     layoutMultipleWives(mothers);
-    drawMotherLinks(g, mothers);
+    drawMotherLinks(g, mothers,d);
     drawMotherNodes(g, mothers);
   }
 
@@ -74,7 +74,7 @@ window.MotherLayer = (function () {
   // --------------------------------------------------
   // Vẽ đường nối GẤP KHÚC – ĐÚNG TỌA ĐỘ THẬT
   // --------------------------------------------------
-  function drawMotherLinks(g, mothers) {
+  function drawMotherLinks(g, mothers,d) {
     Object.values(mothers).forEach(m => {
       const f = m.father;
 
@@ -94,7 +94,7 @@ window.MotherLayer = (function () {
     // ===== MẸ → CÁC CON (VẼ 1 TRỤC CHUNG) =====
 		if (m.children.length > 0) {
 		  const children = m.children;
-
+		if (!Number.isFinite(d)) return;
 		  const yBranch = m.y + (d * 2 / 3) / 2;
 		  const minX = Math.min(...children.map(c => c.x));
 		  const maxX = Math.max(...children.map(c => c.x));
@@ -179,4 +179,5 @@ window.MotherLayer = (function () {
   };
 
 })();
+
 
