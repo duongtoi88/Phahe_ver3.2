@@ -77,8 +77,8 @@
         mg.append("rect")
           .attr("x", -70)
           .attr("y", -22)
-          .attr("width", 80)
-          .attr("height", 140)
+          .attr("width", 140)
+          .attr("height", 80)
           .attr("rx", 6)
           .attr("ry", 6);
 
