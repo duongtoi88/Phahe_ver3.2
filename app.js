@@ -179,7 +179,7 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
     .attr("class", "link")
     .attr("fill", "none")
     .attr("stroke", "transparent")
-    .attr("stroke-width", 2)
+    .attr("stroke-width", 0)
     .attr("d", d => {
       const x1 = d.source.x;
       const y1 = d.source.y;

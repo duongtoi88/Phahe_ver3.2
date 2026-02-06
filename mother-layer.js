@@ -85,8 +85,8 @@ window.MotherLayer = (function () {
         .attr("stroke", "#555")
         .attr("stroke-width", 2)
         .attr("d", `
-          M ${f.x},${f.y}
-          V ${m.y}
+          M ${f.x},${f.y+60}
+          V ${m.y-60}
           H ${m.x}
         `);
 
@@ -98,8 +98,8 @@ window.MotherLayer = (function () {
           .attr("stroke", "#555")
           .attr("stroke-width", 2)
           .attr("d", `
-            M ${m.x},${m.y}
-            V ${c.y}
+            M ${m.x},${m.y+60}
+            V ${c.y-60}
             H ${c.x}
           `);
       });
@@ -148,4 +148,3 @@ window.MotherLayer = (function () {
   };
 
 })();
-
