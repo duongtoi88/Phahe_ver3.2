@@ -1,59 +1,63 @@
 // mother-nodes.js
-// FINAL VERSION
-// - KHÔNG vẽ nối mẹ–con
-// - Mẹ chỉ nằm trong đoạn dọc thứ 1 (cha → junction)
-// - Nhiều vợ, xếp gọn, không phá luồng con
+// FINAL LOGIC
+// - Vẽ CHA → MẸ
+// - Vẽ MẸ → CON (theo ID me)
+// - KHÔNG vẽ CHA → CON (đã ẩn ở app.js)
+// - KHÔNG phá d3.tree()
 
 function renderMotherNodes(g, nodes, peopleMap) {
   if (!window.rawRows) return;
 
   const mothers = [];
 
+  /* =========================================================
+     1. THU THẬP DANH SÁCH MẸ (VỢ) THEO TỪNG CHA
+     ========================================================= */
   nodes.forEach(d => {
     const fatherID = d.data.id;
     const fatherX = d.x;
     const fatherY = d.y;
 
-    // Lấy tất cả vợ của người cha này
+    // Tọa độ đáy CHA
+    const fatherBottomY = fatherY + 60;
+
+    // Junction phải khớp app.js (CHA → CON)
+    // app.js đang dùng: fatherBottomY + 160
+    const junctionY = fatherBottomY + 160;
+
+    // Lấy tất cả vợ của cha
     const wives = window.rawRows.filter(r =>
       String(r["ID chồng"] || "").replace(".0", "") === fatherID
     );
 
     if (!wives.length) return;
 
-    // Tọa độ đáy node cha
-    const fatherBottomY = fatherY + 60;
-
-    // JunctionY PHẢI trùng với junction trong app.js
-    // (app.js đang dùng: fatherBottomY + 160)
-    const junctionY = fatherBottomY + 160;
-
-    // Chiều cao node mẹ
-    const motherHeight = 120;
-
-    // Khoảng không gian đoạn dọc thứ 1
-    const trunkHeight = junctionY - fatherBottomY;
-
-    // Vị trí trung tâm cho mẹ (nằm trọn trong đoạn dọc 1)
-    const centerY = fatherBottomY + trunkHeight / 2;
-
-    // Nếu nhiều vợ → xếp so le rất nhẹ theo X (KHÔNG chen luồng con)
-    const offsetX = 90;
+    // Nếu nhiều vợ → xếp dọc, KHÔNG lệch trục
+    const spacingY = 140;
+    const baseCenterY = fatherBottomY + (junctionY - fatherBottomY) / 2;
 
     wives.forEach((wife, index) => {
       const wifeID = String(wife.ID).replace(".0", "");
       const wifePerson = peopleMap[wifeID];
       if (!wifePerson) return;
 
+      const centerY =
+        baseCenterY + (index - (wives.length - 1) / 2) * spacingY;
+
       mothers.push({
         mother: wifePerson,
-        x: fatherX + (index - (wives.length - 1) / 2) * offsetX,
+        motherID: wifeID,
+        fatherX,
+        fatherBottomY,
+        x: fatherX,     // KHÓA TRỤC CHA
         y: centerY
       });
     });
   });
 
-  /* ====== VẼ NODE MẸ ====== */
+  /* =========================================================
+     2. VẼ NODE MẸ
+     ========================================================= */
   const motherNodes = g.selectAll(".mother-node")
     .data(mothers, d => d.mother.id)
     .enter()
@@ -76,4 +80,60 @@ function renderMotherNodes(g, nodes, peopleMap) {
     .attr("dominant-baseline", "middle")
     .style("font-size", "12px")
     .text(d => d.mother.name);
+
+  /* =========================================================
+     3. VẼ ĐƯỜNG CHA → Mẹ
+     ========================================================= */
+  g.selectAll(".link-father-mother")
+    .data(mothers)
+    .enter()
+    .append("path")
+    .attr("class", "link-father-mother")
+    .attr("fill", "none")
+    .attr("stroke", "#555")
+    .attr("stroke-width", 2)
+    .attr("d", d => `
+      M ${d.fatherX},${d.fatherBottomY}
+      V ${d.y - 60}
+    `);
+
+  /* =========================================================
+     4. VẼ ĐƯỜNG MẸ → CON (THEO ID me)
+     ========================================================= */
+  mothers.forEach(m => {
+    const children = window.rawRows.filter(r =>
+      String(r["ID me"] || "").replace(".0", "") === m.motherID
+    );
+
+    if (!children.length) return;
+
+    const spacing = 100;
+    const startX =
+      m.x - ((children.length - 1) * spacing) / 2;
+
+    children.forEach((child, i) => {
+      const childID = String(child.ID).replace(".0", "");
+
+      // Lấy node con đã được d3.tree vẽ
+      const childNode = g.selectAll(".node")
+        .filter(d => d.data.id === childID)
+        .datum();
+
+      if (!childNode) return;
+
+      const childTopY = childNode.y - 60;
+      const x = startX + i * spacing;
+
+      g.append("path")
+        .attr("class", "link-mother-child")
+        .attr("fill", "none")
+        .attr("stroke", "#555")
+        .attr("stroke-width", 2)
+        .attr("d", `
+          M ${m.x},${m.y + 60}
+          H ${x}
+          V ${childTopY}
+        `);
+    });
+  });
 }
