@@ -11,7 +11,7 @@ function getValue(row, key) {
 }
 
 window.onload = () => {
-  fetch('https://duongtoi88.github.io/Pha_he/input.xlsx')
+  fetch('https://duongtoi88.github.io/Phahe_ver3.2/input.xlsx')
     .then(res => res.arrayBuffer())
     .then(data => {
       const workbook = XLSX.read(data, { type: 'array' });
