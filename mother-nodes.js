@@ -96,13 +96,15 @@ function renderMotherNodes(g, nodes, peopleMap) {
     children.forEach((child, i) => {
       const childID = String(child.ID).replace(".0", "");
 
-		const childSel = g.selectAll(".node")
-		  .filter(d => String(d.data.id) === String(childID));
+		let childNode = null;
 
-		if (childSel.empty()) return;
+		g.selectAll(".node").each(function(d) {
+		  if (String(d.data.id) === String(childID)) {
+			childNode = d;
+		  }
+		});
 
-		const childNode = childSel.datum();
-
+		if (!childNode) return;
 
       if (!childNode) return;
 
