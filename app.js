@@ -1,14 +1,4 @@
 // Tự động đọc file Excel khi trang vừa load
-
-// ===== Layout constants (GLOBAL) =====
-window.LayoutConfig = {
-  GAP_FATHER_MOTHER: 20,   // Cha → mẹ
-  MOTHER_HEIGHT: 160,      // Chiều cao node mẹ
-  GAP_MC_TOP: 20,          // Mẹ → con (đoạn dọc 1)
-  GAP_MC_BOTTOM: 100       // Mẹ → con (đoạn dọc 2)
-};
-
-
 window.onload = () => {
   fetch('https://duongtoi88.github.io/Phahe_ver3.2/input.xlsx')
     .then(res => res.arrayBuffer())
@@ -139,7 +129,6 @@ if (includeGirls) {
   });
   window.peopleMap = people;
   return treePeople[rootID];
-
 }
 
 // Vẽ cây phả hệ bằng D3.js
@@ -184,41 +173,21 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
 
   // Vẽ đường nối
   g.selectAll(".link")
-	  .data(root.links())
-	  .enter()
-	  .append("path")
-	  .attr("class", "link")
-	  .attr("fill", "none")
-	  .attr("stroke", "transparent")
-	  .attr("stroke-width", 2)
-	  .attr("d", d => {
-	  const fatherBottomY = d.source.y + 60;
-
-	  // === CHA → MẸ ===
-	  const {
-		  GAP_FATHER_MOTHER,
-		  MOTHER_HEIGHT,
-		  GAP_MC_TOP,
-		  GAP_MC_BOTTOM
-		} = window.LayoutConfig;
-
-		const motherTopY = fatherBottomY + GAP_FATHER_MOTHER;
-
-	  const motherBottomY = motherTopY + MOTHER_HEIGHT;
-
-	  // === MẸ → CON ===
-	  const midY = motherBottomY + GAP_MC_TOP;
-	  const childTopY = d.target.y - 60;
-
-	  return `
-		M ${d.source.x},${fatherBottomY}
-		V ${motherTopY}        /* CHA → MẸ (20) */
-		V ${motherBottomY}     /* qua node MẸ (160) */
-		V ${midY}              /* MẸ → CON (20) */
-		H ${d.target.x}        /* đoạn ngang */
-		V ${childTopY}         /* xuống CON (100) */
-	  `;
-	})
+    .data(root.links())
+    .enter()
+    .append("path")
+    .attr("class", "link")
+    .attr("fill", "none")
+    .attr("stroke", "#555")
+    .attr("stroke-width", 2)
+    .attr("d", d => {
+      const x1 = d.source.x;
+      const y1 = d.source.y;
+      const x2 = d.target.x;
+      const y2 = d.target.y;
+      const midY = (y1 + y2) / 2;
+      return `M ${x1},${1} V ${midY} H ${x2} V ${y2}`;
+    });
 
   // Vẽ các node
   const node = g.selectAll(".node")
@@ -269,7 +238,7 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
     const scrollX = centerX - container.clientWidth / 2;
     container.scrollLeft = scrollX;
   }, 50);
-  // ===== VER 3.2: Vẽ node MẸ =====
+  // ===== VER 3.2: Vẽ node me =====
 if (window.peopleMap && typeof renderMotherNodes === "function") {
   renderMotherNodes(g, root.descendants(), window.peopleMap);
 }
@@ -304,3 +273,7 @@ function showQuickTooltip(event, data) {
 function openDetailTab(id) {
   window.location.href = `detail.html?id=${id}`;
 }
+
+
+
+
