@@ -71,14 +71,14 @@
           .attr("class", "node mother")
           .attr(
             "transform",
-            `translate(${x},${y}) rotate(90)`
+            `translate(${x},${y}) rotate(0)`
           );
 
         mg.append("rect")
           .attr("x", -70)
           .attr("y", -22)
-          .attr("width", 140)
-          .attr("height", 44)
+          .attr("width", 80)
+          .attr("height", 140)
           .attr("rx", 6)
           .attr("ry", 6);
 
