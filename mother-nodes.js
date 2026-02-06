@@ -1,9 +1,7 @@
 // =======================================
 // mother-nodes.js
-// FINAL: NODE MẸ XOAY DỌC – KHÔNG LINK
-// - KHÔNG vẽ bất kỳ đường nối nào
-// - Node mẹ xoay dọc, đủ cao cho tên dài
-// - Hỗ trợ nhiều vợ
+// FINAL FIX: node mẹ xoay dọc – layer riêng
+// KHÔNG remove node tree gốc
 // =======================================
 
 (function () {
@@ -16,8 +14,12 @@
     const g = window.treeGroup;
     const rows = window.rawRows;
 
-    // ===== clear node mẹ cũ (QUAN TRỌNG) =====
-    g.selectAll(".node.mother").remove();
+    // ===== TẠO / RESET LAYER RIÊNG CHO MẸ =====
+    let motherLayer = g.select("g.mother-layer");
+    if (!motherLayer.empty()) {
+      motherLayer.remove();
+    }
+    motherLayer = g.append("g").attr("class", "mother-layer");
 
     // ===== map raw rows theo ID =====
     const peopleById = {};
@@ -65,20 +67,18 @@
           (index - (motherIds.length - 1) / 2) * spacingX;
         const y = fatherNode.y + offsetY;
 
-        // ===== NODE MẸ =====
-        const mg = g.append("g")
+        const mg = motherLayer.append("g")
           .attr("class", "node mother")
           .attr(
             "transform",
             `translate(${x},${y}) rotate(90)`
           );
 
-        // rect CAO (sau xoay) để chứa tên dài
         mg.append("rect")
           .attr("x", -70)
           .attr("y", -22)
-          .attr("width", 140)   // chiều DÀI sau xoay
-          .attr("height", 44)   // độ dày
+          .attr("width", 140)
+          .attr("height", 44)
           .attr("rx", 6)
           .attr("ry", 6);
 
@@ -86,7 +86,6 @@
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
           .style("font-size", "12px")
-          .style("white-space", "pre")
           .text(mother["Họ và tên"] || "");
       });
     });
