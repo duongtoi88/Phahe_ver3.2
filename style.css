@@ -1,81 +1,42 @@
-/* =========================
-   GLOBAL
-========================= */
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Arial;
+  text-align: center;
 }
-
-/* =========================
-   TREE
-========================= */
 #tree-container svg {
-  border-top: 1px solid #ccc;
+  border: 1px solid #ccc;
+  margin-top: 20px;
 }
-
-/* =========================
-   NODE – CHUNG
-========================= */
+/* Màu sắc node đặc biệt theo Đinh */
 .node rect {
-  transition: all 0.25s ease;
+  transition: fill 0.3s ease;
 }
 
+.node rect.dinh-x {
+  fill: #c3e6cb; /* Màu xanh nhạt */
+  stroke: #155724;
+}
+
+.node rect.dinh-thuong {
+  fill: #ffffff; /* Màu trắng */
+  stroke: #0c5460;
+}
 .node text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
   font-size: 12px;
-  pointer-events: none;
-  fill: #000;
+  dominant-baseline: middle;
 }
-
-/* =========================
-   FAMILY NODE [CHA | MẸ]
-========================= */
-.node.family rect {
-  fill: #e7f1ff;
-  stroke: #0d6efd;
-  stroke-width: 2;
-}
-
-.node.family:hover rect {
-  fill: #d0e3ff;
-}
-
-/* =========================
-   CHILD NODE
-========================= */
-.node.child rect {
-  fill: #ffffff;
-  stroke: #333;
-}
-
-.node.child:hover rect {
-  fill: #f2f2f2;
-}
-
-/* =========================
-   LINKS
-========================= */
 .link {
   fill: none;
-  stroke: #777;
+  stroke: #999;
   stroke-width: 1.5px;
 }
-
-/* =========================
-   INTERACTION (dùng cho Ver sau)
-========================= */
-.node.dim {
-  opacity: 0.25;
-}
-
-.node.active rect {
-  stroke-width: 3;
-  stroke: #dc3545;
-}
-.node.mother rect {
-  fill: #ffe6ee;
-  stroke: #c2185b;
-}
-
-.node.mother text {
-  fill: #000;
-  font-size: 12px;
+.tooltip {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #aaa;
+  padding: 10px;
+  font-size: 14px;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
