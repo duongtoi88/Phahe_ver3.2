@@ -1,10 +1,22 @@
-// app.js - tối ưu, zoom/pan, xử lý lỗi, map children trước, tooltip, focus on node
+// app.js - đầy đủ: robust Excel header mapping, hỗ trợ tải file cục bộ, vẽ bằng D3, zoom/pan, tooltip, centering root
 (function () {
   // ===== Helper đọc cột Excel an toàn Unicode =====
+  function normalizeKey(s) {
+    if (s == null) return '';
+    return String(s).normalize('NFC').trim();
+  }
   function getValue(row, key) {
-    const target = String(key).normalize("NFC");
+    const target = normalizeKey(key);
     for (const k in row) {
-      if (String(k).normalize("NFC") === target) return row[k];
+      if (normalizeKey(k) === target) return row[k];
+    }
+    return null;
+  }
+  // Trả giá trị từ row thử nhiều tên khác nhau (alias)
+  function getAny(row, names) {
+    for (const n of names) {
+      const v = getValue(row, n);
+      if (v != null && String(v).toString().trim() !== '') return v;
     }
     return null;
   }
@@ -33,43 +45,112 @@
     el.textContent = msg;
   }
 
-  // ===== Load Excel & init =====
+  // ===== Init UI & event handlers =====
   window.addEventListener('DOMContentLoaded', () => {
     initUI();
+
+    const fileInput = $('fileInput');
+    if (fileInput) {
+      fileInput.addEventListener('change', (ev) => {
+        const f = ev.target.files && ev.target.files[0];
+        if (!f) return;
+        showMessage('Đang đọc file Excel từ máy của bạn...');
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const ab = e.target.result;
+          try {
+            processWorkbookArrayBuffer(ab);
+            showMessage('Đã đọc file cục bộ. Chọn ID gốc để vẽ cây.');
+            redraw();
+          } catch (err) {
+            console.error('Process local file error', err);
+            showMessage('Lỗi khi xử lý file: ' + (err.message || err));
+          }
+        };
+        reader.onerror = function (e) {
+          console.error('FileReader error', e);
+          showMessage('Không thể đọc file: ' + e);
+        };
+        reader.readAsArrayBuffer(f);
+      });
+    }
+
+    // Thử auto-load input.xlsx (nếu có trên server)
     loadExcel('input.xlsx').catch(err => {
-      console.error(err);
-      showMessage('Lỗi khi tải/đọc file Excel: ' + (err.message || err));
+      console.warn('Auto load input.xlsx thất bại:', err);
+      showMessage('Không tự động tìm thấy input.xlsx trên server. Vui lòng tải file Excel bằng ô "Tải file Excel" phía trên.');
     });
   });
 
+  // ===== Load Excel từ URL =====
   async function loadExcel(url) {
-    showMessage('Đang tải và đọc file Excel...');
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+    showMessage('Đang tải và đọc file Excel từ server: ' + url);
+    let res;
+    try {
+      res = await fetch(url, { cache: 'no-store' });
+    } catch (err) {
+      throw new Error('Fetch lỗi: ' + err.message);
+    }
+    if (!res.ok) {
+      throw new Error('Fetch thất bại: ' + res.status + ' ' + res.statusText);
+    }
     const data = await res.arrayBuffer();
-    const wb = XLSX.read(data, { type: 'array' });
+    processWorkbookArrayBuffer(data);
+  }
+
+  // ===== Xử lý ArrayBuffer workbook (dùng chung cho local & fetch) =====
+  function processWorkbookArrayBuffer(arrayBuffer) {
+    const wb = XLSX.read(arrayBuffer, { type: 'array' });
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
+    // DEBUG: log kích thước & một sample header để biết SheetJS đọc gì
+    console.info('SheetJS: rows read =', rows.length);
+    if (rows.length > 0) {
+      console.info('SheetJS: sample row keys =', Object.keys(rows[0]));
+      showMessage('Đã đọc ' + rows.length + ' hàng. (Xem console để biết tên cột thực tế.)');
+    } else {
+      showMessage('File rỗng hoặc không tìm thấy hàng. Vui lòng kiểm tra file input.xlsx hoặc upload file cục bộ.');
+    }
     state.rows = rows;
     buildMaps(rows);
     buildRootSelector();
-    showMessage('Đã tải xong. Chọn ID gốc để vẽ cây.');
-    redraw();
   }
 
+  // ===== Build maps robust (không phụ thuộc chính xác tên cột) =====
   function buildMaps(rows) {
     state.people = {};
     state.childrenMap = {};
     state.rootIDs = [];
 
-    rows.forEach(r => {
-      const id = String(r.ID);
-      const father = getValue(r, 'ID cha') ? String(getValue(r, 'ID cha')) : null;
-      const mother = getValue(r, 'ID mẹ') ? String(getValue(r, 'ID mẹ')) : null;
-      const dinh = r['Đinh'] || '';
+    // Các alias khả dĩ cho từng trường
+    const ID_KEYS = ['ID', 'Id', 'id'];
+    const NAME_KEYS = ['Họ và tên', 'Ho va ten', 'Ho và tên', 'Họ và ten', 'Họ và tên', 'Họ và tên ', 'Name', 'Ten', 'Họ và tên\r\n'];
+    const FATHER_KEYS = ['ID cha', 'ID_cha', 'IDcha', 'ID Cha', 'IDCha', 'ID_cha', 'ID_cha '];
+    const MOTHER_KEYS = ['ID mẹ', 'ID_me', 'IDme', 'ID Mẹ', 'IDMe', 'ID mẹ '];
+    const DINH_KEYS = ['Đinh', 'Dinh', 'dinh'];
+
+    rows.forEach((r, idx) => {
+      if (!r) return;
+      const rawId = getAny(r, ID_KEYS);
+      if (rawId == null) {
+        // skip nếu không có ID - nhưng log 1 lần để debug
+        if (idx < 3) console.warn('buildMaps: row missing ID (sample):', r);
+        return;
+      }
+      const id = String(rawId).trim();
+      const fatherVal = getAny(r, FATHER_KEYS);
+      const motherVal = getAny(r, MOTHER_KEYS);
+      const father = fatherVal ? String(fatherVal).trim() : null;
+      const mother = motherVal ? String(motherVal).trim() : null;
+      const dinhVal = getAny(r, DINH_KEYS);
+      const dinh = dinhVal != null ? String(dinhVal).trim() : '';
+
+      const nameVal = getAny(r, NAME_KEYS);
+      const name = nameVal != null ? String(nameVal).trim() : (r['Họ và tên'] || r['Name'] || '');
+
       state.people[id] = {
         id,
-        name: r['Họ và tên'] || '',
+        name,
         father,
         mother,
         dinh,
@@ -77,17 +158,15 @@
       if (father) {
         (state.childrenMap[father] ||= []).push(id);
       }
-      // mark roots: records with "Đinh" === "x" are candidate roots
-      if (r['Đinh'] === 'x') state.rootIDs.push(id);
+      if (String(dinh) === 'x') state.rootIDs.push(id);
     });
 
-    // ensure unique rootIDs
     state.rootIDs = Array.from(new Set(state.rootIDs));
+    console.info('buildMaps: people count =', Object.keys(state.people).length, 'rootIDs =', state.rootIDs.length);
   }
 
   // ===== UI init =====
   function initUI() {
-    // ensure a select exists (index.html already inserts a container), but create if missing
     let select = $('rootSelector');
     if (!select) {
       select = document.createElement('select');
@@ -107,7 +186,6 @@
       });
     }
 
-    // small debounce to avoid multiple expensive redraws
     window._redrawTimeout = null;
     window.debounceRedraw = function () {
       if (window._redrawTimeout) clearTimeout(window._redrawTimeout);
@@ -119,12 +197,11 @@
   function buildRootSelector() {
     const select = $('rootSelector');
     select.innerHTML = '';
-    // If no explicit roots found, fallback to unique top-level people (no father)
     let opts = state.rootIDs.length ? state.rootIDs.slice() : [];
     if (!opts.length) {
       opts = Object.values(state.people)
         .filter(p => !p.father)
-        .slice(0, 50) // limit to avoid giant selects
+        .slice(0, 50)
         .map(p => p.id);
     }
 
@@ -137,32 +214,38 @@
       select.appendChild(opt);
     });
 
-    // select the first by default
     if (select.options.length) {
       select.selectedIndex = 0;
       state.currentRootID = select.value;
+    } else {
+      state.currentRootID = null;
+      // debug: show sample first row keys to help identify header mismatch
+      const sample = state.rows[0];
+      if (sample) {
+        showMessage('Không tìm thấy ID gốc. Tên cột trong file có thể khác. Sample columns: ' + Object.keys(sample).join(', '));
+        console.warn('buildRootSelector: sample row keys =', Object.keys(sample));
+      } else {
+        showMessage('Không có dữ liệu. Vui lòng upload input.xlsx hoặc chọn file cục bộ.');
+      }
     }
   }
 
   // ===== Convert dữ liệu sang subtree =====
   function convertToSubTree(rootID, includeGirls) {
     if (!rootID || !state.people[rootID]) return null;
-
     const valid = new Set();
-    // DFS stack using childrenMap for speed
     const stack = [rootID];
     while (stack.length) {
       const id = stack.pop();
       const p = state.people[id];
       if (!p) continue;
-      if (includeGirls || p.dinh === 'x') valid.add(id);
+      valid.add(id);
       const children = state.childrenMap[id] || [];
       for (const cid of children) {
         stack.push(cid);
       }
     }
 
-    // build nodes only for valid set, recursively
     function buildNode(id) {
       const p = state.people[id];
       if (!p) return null;
@@ -182,8 +265,7 @@
       return node;
     }
 
-    const rootNode = buildNode(rootID);
-    return rootNode;
+    return buildNode(rootID);
   }
 
   // ===== Vẽ tree =====
@@ -195,7 +277,7 @@
     if (!container) return;
     container.innerHTML = '';
     if (!treeData) {
-      showMessage('Không có dữ liệu cho ID gốc đã chọn.');
+      showMessage('Không có dữ liệu cho ID gốc đã chọn. Vui lòng upload input.xlsx hoặc chọn file cục bộ.');
       return;
     }
     showMessage('');
@@ -332,6 +414,26 @@
       } catch (err) {
         console.error('Error drawMotherNodes:', err);
       }
+    }
+
+    // Tự động căn giữa node gốc sau khi vẽ (an toàn, dùng d3.zoom)
+    try {
+      const rootNode = nodes.find(n => n.depth === 0) || nodes[0];
+      if (rootNode) {
+        const svgNode = svg.node();
+        const svgRect = svgNode.getBoundingClientRect();
+        const cx = svgRect.width / 2;
+        const cy = svgRect.height / 3;
+        const x = rootNode.x;
+        const y = rootNode.y;
+        const t = d3.zoomTransform(svgNode);
+        const scale = t.k || 1;
+        const translateX = cx - x * scale;
+        const translateY = cy - y * scale;
+        svg.call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(scale));
+      }
+    } catch (err) {
+      console.warn('Centering root failed:', err);
     }
   }
 
