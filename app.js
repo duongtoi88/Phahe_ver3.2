@@ -127,9 +127,8 @@ if (includeGirls) {
       return aYear - bYear;
     });
   });
-
-  return treePeople[rootID];
   window.peopleMap = people;
+  return treePeople[rootID];
 }
 
 // Vẽ cây phả hệ bằng D3.js
@@ -183,7 +182,7 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
     .attr("stroke-width", 2)
     .attr("d", d => {
       const x1 = d.source.x;
-      const y1 = d.source.y;
+      const y1 = d.source.y + 200;
       const x2 = d.target.x;
       const y2 = d.target.y;
       const midY = (y1 + y2) / 2;
@@ -274,3 +273,4 @@ function showQuickTooltip(event, data) {
 function openDetailTab(id) {
   window.location.href = `detail.html?id=${id}`;
 }
+
