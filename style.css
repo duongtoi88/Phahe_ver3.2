@@ -12,19 +12,23 @@ body {
   color: #111;
 }
 
+h1 {
+  margin: 12px;
+}
+
 /* =========================
-   CONTAINER CÂY PHẢ HỆ
+   CONTAINER CÂY
 ========================= */
 #tree-container {
   width: 100%;
-  height: calc(100vh - 140px);
+  height: calc(100vh - 160px);
   overflow: auto;
   border: 1px solid #ccc;
   background: #fff;
 }
 
 /* =========================
-   LINK (CHA → CON)
+   LINK CHA → CON (TREE GỐC)
 ========================= */
 .link {
   fill: none;
@@ -33,21 +37,24 @@ body {
 }
 
 /* =========================
-   NODE CHUNG
+   NODE TREE (CHA / CON)
 ========================= */
-.node {
-  cursor: pointer;
-}
-
-/* KHÔNG BAO GIỜ set rect = đen */
 .node rect {
   fill: #ffffff;
   stroke: #333;
   stroke-width: 1.2;
 }
 
+.node text {
+  fill: #000;
+  font-size: 12px;
+  text-anchor: middle;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* =========================
-   NODE ĐINH (NAM)
+   NAM ĐINH
 ========================= */
 .node.dinh-x rect {
   fill: #c8e6c9;          /* xanh nhạt */
@@ -55,7 +62,7 @@ body {
 }
 
 /* =========================
-   NODE THƯỜNG / NỮ
+   NỮ / THƯỜNG
 ========================= */
 .node.dinh-thuong rect {
   fill: #ffffff;
@@ -63,37 +70,19 @@ body {
 }
 
 /* =========================
-   TEXT TRONG NODE
+   NODE MẸ (OVERLAY RIÊNG)
 ========================= */
-.node text {
-  pointer-events: none;
-  user-select: none;
-  fill: #000;
-  font-size: 12px;
-  text-anchor: middle;
-}
-
-/* =========================
-   NODE MẸ (OVERLAY)
-========================= */
-.node.mother rect {
-  fill: #ffe6ee;
+.mother-node rect {
+  fill: #ffe6ee;          /* hồng nhạt */
   stroke: #c2185b;
   stroke-width: 1.5;
 }
 
-.node.mother text {
+.mother-node text {
   fill: #880e4f;
+  font-size: 12px;
   font-weight: 500;
-}
-
-/* =========================
-   LINK MẸ – HUB – CON
-========================= */
-.mother-link {
-  stroke: #c2185b;
-  stroke-width: 1.2;
-  fill: none;
+  pointer-events: none;
 }
 
 /* =========================
