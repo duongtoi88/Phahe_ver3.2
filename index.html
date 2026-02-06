@@ -1,32 +1,34 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>Phả hệ Dương Danh ở Quốc Oai</title>
-
-  <link rel="stylesheet" href="./style.css" />
-
-  <script src="./d3.v7.min.js"></script>
-  <script src="./xlsx.full.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Phả hệ Dương Danh</title>
+  <base href="https://duongtoi88.github.io/Phahe_ver3.2/">
+  <!-- Nhúng SheetJS để đọc file Excel -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <!-- Nhúng D3.js để vẽ sơ đồ -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script defer src="app.js"></script>
+  <script defer src="mother-nodes.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <h1>Phả hệ Dương Danh ở Quốc Oai</h1>
-
-  <div>
-    <label><b>Chọn ID gốc:</b></label><br />
-    <label>
-      <input type="checkbox" id="showGirls" />
-      Cả Nam & Nữ
-    </label>
+  <h2>Phả hệ Dương Danh ở Quốc Oai</h2>
+  
+  <!-- Thêm dropdown chọn ID gốc (sẽ được tạo bằng JS) -->
+  <div style="margin: 10px;">
+    <label for="rootSelector"><b>Chọn ID gốc:</b></label>
+    <!-- select sẽ được JS thêm vào -->
+  </div>
+  
+  <div style="margin: 0 10px 10px;">
+    <label><input type="checkbox" id="showGirls" style="margin-right: 6px;">Cả Nam & Nữ</label>
   </div>
 
-  <div id="tree-container"></div>
+  <!-- Khu vực hiển thị cây phả hệ -->
+<div id="tree-container" style="overflow-x: auto; overflow-y: auto; white-space: nowrap; height: 100vh;"></div>
 
-  <div id="tooltip"></div>
-
-  <!-- JS -->
-  <script src="./app.js"></script>
-  <script src="./mother-nodes.js"></script>
+  <!-- Tooltip vẫn giữ lại để gợi ý khi hover nếu cần -->
+  <div id="tooltip" class="tooltip" style="display: none;"></div>
 </body>
 </html>
