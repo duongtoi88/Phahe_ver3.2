@@ -1,3 +1,6 @@
+/* =========================
+   RESET CƠ BẢN
+========================= */
 * {
   box-sizing: border-box;
 }
@@ -5,72 +8,116 @@
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+  color: #111;
 }
 
-h1 {
-  margin: 12px;
-}
-
-/* ===== TREE CONTAINER ===== */
+/* =========================
+   CONTAINER CÂY PHẢ HỆ
+========================= */
 #tree-container {
   width: 100%;
-  height: calc(100vh - 160px);
-  border: 1px solid #ccc;
+  height: calc(100vh - 140px);
   overflow: auto;
+  border: 1px solid #ccc;
+  background: #fff;
 }
 
-/* ===== LINK CHA → CON ===== */
+/* =========================
+   LINK (CHA → CON)
+========================= */
 .link {
   fill: none;
   stroke: #777;
   stroke-width: 2;
 }
 
-/* ===== NODE CHUNG ===== */
+/* =========================
+   NODE CHUNG
+========================= */
+.node {
+  cursor: pointer;
+}
+
+/* KHÔNG BAO GIỜ set rect = đen */
 .node rect {
   fill: #ffffff;
   stroke: #333;
   stroke-width: 1.2;
 }
 
-.node text {
-  font-size: 12px;
-  fill: #000;
-  pointer-events: none;
-}
-
-/* ===== NAM ĐINH ===== */
+/* =========================
+   NODE ĐINH (NAM)
+========================= */
 .node.dinh-x rect {
-  fill: #c8e6c9;
+  fill: #c8e6c9;          /* xanh nhạt */
   stroke: #2e7d32;
 }
 
-/* ===== NỮ / THƯỜNG ===== */
+/* =========================
+   NODE THƯỜNG / NỮ
+========================= */
 .node.dinh-thuong rect {
   fill: #ffffff;
   stroke: #1565c0;
 }
 
-/* ===== NODE MẸ ===== */
-.mother-node rect {
+/* =========================
+   TEXT TRONG NODE
+========================= */
+.node text {
+  pointer-events: none;
+  user-select: none;
+  fill: #000;
+  font-size: 12px;
+  text-anchor: middle;
+}
+
+/* =========================
+   NODE MẸ (OVERLAY)
+========================= */
+.node.mother rect {
   fill: #ffe6ee;
   stroke: #c2185b;
   stroke-width: 1.5;
 }
 
-.mother-node text {
+.node.mother text {
   fill: #880e4f;
-  font-size: 12px;
+  font-weight: 500;
 }
 
-/* ===== TOOLTIP ===== */
+/* =========================
+   LINK MẸ – HUB – CON
+========================= */
+.mother-link {
+  stroke: #c2185b;
+  stroke-width: 1.2;
+  fill: none;
+}
+
+/* =========================
+   TOOLTIP
+========================= */
 #tooltip {
   position: absolute;
   display: none;
-  background: #fff;
+  background: #ffffff;
   border: 1px solid #333;
   border-radius: 4px;
-  padding: 8px;
+  padding: 8px 10px;
   font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
   z-index: 9999;
+  max-width: 260px;
+}
+
+/* =========================
+   SELECT + CHECKBOX
+========================= */
+select,
+input[type="checkbox"] {
+  margin: 6px;
+  font-size: 14px;
 }
