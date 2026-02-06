@@ -8,13 +8,13 @@
   setTimeout(drawMotherNodes, 300);
 
   function drawMotherNodes() {
-    if (!window.treeRoot || !window.treeGroup || !window.rawPeople) {
+    if (!window.treeRoot || !window.treeGroup || !window.rawRows) {
       console.warn("Mother nodes: missing dependency");
       return;
     }
 
     const g = window.treeGroup;
-    const people = window.rawPeople;
+    const people = window.rawRows;
 
     // map dữ liệu theo ID
     const peopleById = {};
