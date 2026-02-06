@@ -1,6 +1,6 @@
 // Tự động đọc file Excel khi trang vừa load
 window.onload = () => {
-  fetch('https://duongtoi88.github.io/Phahe_ver3.2/input.xlsx')
+  fetch('https://duongtoi88.github.io/Pha_he/input.xlsx')
     .then(res => res.arrayBuffer())
     .then(data => {
       const workbook = XLSX.read(data, { type: 'array' });
@@ -68,7 +68,7 @@ function convertToSubTree(rows, rootID, includeGirls = false) {
       death: row["Năm mất"] || "",
       info: row["Thông tin chi tiết"] || "",
       father: row["ID cha"] ? String(row["ID cha"]).replace('.0', '') : null,
-      mother: row["ID me"] ? String(row["ID me"]).replace('.0', '') : null,
+      mother: row["ID mẹ"] ? String(row["ID mẹ"]).replace('.0', '') : null,
       spouse: row["ID chồng"] ? String(row["ID chồng"]).replace('.0', '') : null,
       doi: row["Đời"] || "",
       dinh: row["Đinh"] || "",
@@ -182,11 +182,11 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
     .attr("stroke-width", 2)
     .attr("d", d => {
       const x1 = d.source.x;
-      const y1 = d.source.y;
+      const y1 = d.source.y + 200;
       const x2 = d.target.x;
       const y2 = d.target.y;
       const midY = (y1 + y2) / 2;
-      return `M ${x1},${1} V ${midY} H ${x2} V ${y2}`;
+      return `M ${x1},${y1} V ${midY} H ${x2} V ${y2}`;
     });
 
   // Vẽ các node
@@ -238,7 +238,7 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
     const scrollX = centerX - container.clientWidth / 2;
     container.scrollLeft = scrollX;
   }, 50);
-  // ===== VER 3.2: Vẽ node me =====
+  // ===== VER 3.2: Vẽ node MẸ =====
 if (window.peopleMap && typeof renderMotherNodes === "function") {
   renderMotherNodes(g, root.descendants(), window.peopleMap);
 }
@@ -273,7 +273,4 @@ function showQuickTooltip(event, data) {
 function openDetailTab(id) {
   window.location.href = `detail.html?id=${id}`;
 }
-
-
-
 
