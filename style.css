@@ -50,3 +50,7 @@ body {
   writing-mode: vertical-rl;
   font-size: 11px;
 }
+
+.link-wife {
+  stroke-dasharray: 4,2; /* phân biệt với cha–con */
+}
