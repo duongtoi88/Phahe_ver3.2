@@ -1,4 +1,15 @@
 // Tự động đọc file Excel khi trang vừa load
+// ===== Helper: đọc cột Excel an toàn với Unicode (ID mẹ, ID cha, ...)
+function getValue(row, key) {
+  const target = key.normalize("NFC");
+  for (const k in row) {
+    if (k.normalize("NFC") === target) {
+      return row[k];
+    }
+  }
+  return null;
+}
+
 window.onload = () => {
   fetch('https://duongtoi88.github.io/Pha_he/input.xlsx')
     .then(res => res.arrayBuffer())
@@ -62,18 +73,25 @@ function convertToSubTree(rows, rootID, includeGirls = false) {
   rows.forEach(row => {
     const id = String(row.ID).replace('.0', '');
     people[id] = {
-      id,
-      name: row["Họ và tên"] || "",
-      birth: row["Năm sinh"] || "",
-      death: row["Năm mất"] || "",
-      info: row["Thông tin chi tiết"] || "",
-      father: row["ID cha"] ? String(row["ID cha"]).replace('.0', '') : null,
-      mother: row["ID mẹ"] ? String(row["ID mẹ"]).replace('.0', '') : null,
-      spouse: row["ID chồng"] ? String(row["ID chồng"]).replace('.0', '') : null,
-      doi: row["Đời"] || "",
-      dinh: row["Đinh"] || "",
-      children: []
-    };
+		  id,
+		  name: row["Họ và tên"] || "",
+		  birth: row["Năm sinh"] || "",
+		  death: row["Năm mất"] || "",
+		  info: row["Thông tin chi tiết"] || "",
+		  father: getValue(row, "ID cha")
+			? String(getValue(row, "ID cha")).replace('.0', '')
+			: null,
+		  mother: getValue(row, "ID mẹ")
+			? String(getValue(row, "ID mẹ")).replace('.0', '')
+			: null,
+		  spouse: getValue(row, "ID chồng")
+			? String(getValue(row, "ID chồng")).replace('.0', '')
+			: null,
+		  doi: row["Đời"] || "",
+		  dinh: row["Đinh"] || "",
+		  children: []
+		};
+
   });
 
   function collectDescendants(id) {
