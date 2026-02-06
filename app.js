@@ -1,4 +1,10 @@
 // Tự động đọc file Excel khi trang vừa load
+// ===== Layout constants =====
+const GAP_FATHER_MOTHER = 20;   // Cha → mẹ
+const MOTHER_HEIGHT = 160;      // Chiều cao node mẹ
+const GAP_MC_TOP = 20;          // Mẹ → con (đoạn dọc 1)
+const GAP_MC_BOTTOM = 100;      // Mẹ → con (đoạn dọc 2)
+
 window.onload = () => {
   fetch('https://duongtoi88.github.io/Phahe_ver3.2/input.xlsx')
     .then(res => res.arrayBuffer())
