@@ -129,6 +129,7 @@ if (includeGirls) {
   });
   window.peopleMap = people;
   return treePeople[rootID];
+
 }
 
 // Vẽ cây phả hệ bằng D3.js
@@ -186,7 +187,7 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
       const x2 = d.target.x;
       const y2 = d.target.y;
       const midY = (y1 + y2) / 2;
-      return `M ${x1},${1} V ${midY} H ${x2} V ${y2}`;
+      return `M ${x1},${y1} V ${midY} H ${x2} V ${y2}`;
     });
 
   // Vẽ các node
@@ -238,7 +239,7 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
     const scrollX = centerX - container.clientWidth / 2;
     container.scrollLeft = scrollX;
   }, 50);
-  // ===== VER 3.2: Vẽ node me =====
+  // ===== VER 3.2: Vẽ node MẸ =====
 if (window.peopleMap && typeof renderMotherNodes === "function") {
   renderMotherNodes(g, root.descendants(), window.peopleMap);
 }
@@ -273,7 +274,3 @@ function showQuickTooltip(event, data) {
 function openDetailTab(id) {
   window.location.href = `detail.html?id=${id}`;
 }
-
-
-
-
