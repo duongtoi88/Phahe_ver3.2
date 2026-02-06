@@ -1,63 +1,60 @@
 // mother-nodes.js
-// FINAL LOGIC
-// - Vẽ CHA → MẸ
-// - Vẽ MẸ → CON (theo ID me)
-// - KHÔNG vẽ CHA → CON (đã ẩn ở app.js)
-// - KHÔNG phá d3.tree()
+// FINAL – wives in ONE horizontal row
+// Geometry exactly as requested
 
 function renderMotherNodes(g, nodes, peopleMap) {
   if (!window.rawRows) return;
 
+  /* ===== CONFIG THEO YÊU CẦU ===== */
+  const GAP_FATHER_MOTHER = 20;   // Cha → mẹ
+  const MOTHER_HEIGHT = 160;      // Chiều cao node mẹ
+  const GAP_MC_TOP = 20;          // Mẹ → con (đoạn dọc 1)
+  const GAP_MC_BOTTOM = 100;      // Mẹ → con (đoạn dọc 2)
+  const CHILD_HALF = 60;
+
   const mothers = [];
 
-  /* =========================================================
-     1. THU THẬP DANH SÁCH MẸ (VỢ) THEO TỪNG CHA
-     ========================================================= */
+  /* ===== 1. THU THẬP VỢ ===== */
   nodes.forEach(d => {
     const fatherID = d.data.id;
     const fatherX = d.x;
     const fatherY = d.y;
 
-    // Tọa độ đáy CHA
     const fatherBottomY = fatherY + 60;
 
-    // Junction phải khớp app.js (CHA → CON)
-    // app.js đang dùng: fatherBottomY + 160
-    const junctionY = fatherBottomY + 160;
+    // Cao độ HÀNG VỢ (CHUNG)
+    const motherTopY = fatherBottomY + GAP_FATHER_MOTHER;
+    const motherCenterY = motherTopY + MOTHER_HEIGHT / 2;
 
-    // Lấy tất cả vợ của cha
+    // Lấy danh sách vợ
     const wives = window.rawRows.filter(r =>
       String(r["ID chồng"] || "").replace(".0", "") === fatherID
     );
 
     if (!wives.length) return;
 
-    // Nếu nhiều vợ → xếp dọc, KHÔNG lệch trục
-    const spacingY = 140;
-    const baseCenterY = fatherBottomY + (junctionY - fatherBottomY) / 2;
+    const spacingX = 120;
+    const startX =
+      fatherX - ((wives.length - 1) * spacingX) / 2;
 
-    wives.forEach((wife, index) => {
+    wives.forEach((wife, i) => {
       const wifeID = String(wife.ID).replace(".0", "");
       const wifePerson = peopleMap[wifeID];
       if (!wifePerson) return;
 
-      const centerY =
-        baseCenterY + (index - (wives.length - 1) / 2) * spacingY;
-
       mothers.push({
         mother: wifePerson,
         motherID: wifeID,
-        fatherX,
-        fatherBottomY,
-        x: fatherX,     // KHÓA TRỤC CHA
-        y: centerY
+
+        x: startX + i * spacingX,
+        y: motherCenterY,
+
+        motherBottomY: motherTopY + MOTHER_HEIGHT
       });
     });
   });
 
-  /* =========================================================
-     2. VẼ NODE MẸ
-     ========================================================= */
+  /* ===== 2. VẼ NODE MẸ ===== */
   const motherNodes = g.selectAll(".mother-node")
     .data(mothers, d => d.mother.id)
     .enter()
@@ -68,9 +65,9 @@ function renderMotherNodes(g, nodes, peopleMap) {
 
   motherNodes.append("rect")
     .attr("x", -40)
-    .attr("y", -60)
+    .attr("y", -MOTHER_HEIGHT / 2)
     .attr("width", 80)
-    .attr("height", 120)
+    .attr("height", MOTHER_HEIGHT)
     .attr("rx", 10)
     .attr("ry", 10)
     .attr("class", "mother-rect");
@@ -81,25 +78,7 @@ function renderMotherNodes(g, nodes, peopleMap) {
     .style("font-size", "12px")
     .text(d => d.mother.name);
 
-  /* =========================================================
-     3. VẼ ĐƯỜNG CHA → Mẹ
-     ========================================================= */
-  g.selectAll(".link-father-mother")
-    .data(mothers)
-    .enter()
-    .append("path")
-    .attr("class", "link-father-mother")
-    .attr("fill", "none")
-    .attr("stroke", "#555")
-    .attr("stroke-width", 2)
-    .attr("d", d => `
-      M ${d.fatherX},${d.fatherBottomY}
-      V ${d.y - 60}
-    `);
-
-  /* =========================================================
-     4. VẼ ĐƯỜNG MẸ → CON (THEO ID me)
-     ========================================================= */
+  /* ===== 3. VẼ MẸ → CON ===== */
   mothers.forEach(m => {
     const children = window.rawRows.filter(r =>
       String(r["ID me"] || "").replace(".0", "") === m.motherID
@@ -114,14 +93,13 @@ function renderMotherNodes(g, nodes, peopleMap) {
     children.forEach((child, i) => {
       const childID = String(child.ID).replace(".0", "");
 
-      // Lấy node con đã được d3.tree vẽ
       const childNode = g.selectAll(".node")
         .filter(d => d.data.id === childID)
         .datum();
 
       if (!childNode) return;
 
-      const childTopY = childNode.y - 60;
+      const childTopY = childNode.y - CHILD_HALF;
       const x = startX + i * spacing;
 
       g.append("path")
@@ -130,7 +108,8 @@ function renderMotherNodes(g, nodes, peopleMap) {
         .attr("stroke", "#555")
         .attr("stroke-width", 2)
         .attr("d", `
-          M ${m.x},${m.y + 60}
+          M ${m.x},${m.motherBottomY}
+          V ${m.motherBottomY + GAP_MC_TOP}
           H ${x}
           V ${childTopY}
         `);

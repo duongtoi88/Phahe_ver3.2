@@ -182,18 +182,25 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
 	  .attr("stroke", "transparent")
 	  .attr("stroke-width", 2)
 	  .attr("d", d => {
-		const fatherBottomY = d.source.y + 60;
-		const junctionY = fatherBottomY + 160;   // ← ĐOẠN DỌC THỨ NHẤT
-		const childTopY = d.target.y - 60;
+	  const fatherBottomY = d.source.y + 60;
 
-		return `
-		  M ${d.source.x},${fatherBottomY}
-		  V ${junctionY}
-		  H ${d.target.x}
-		  V ${childTopY}
-		`;
-	  });
+	  // === CHA → MẸ ===
+	  const motherTopY = fatherBottomY + GAP_FATHER_MOTHER;
+	  const motherBottomY = motherTopY + MOTHER_HEIGHT;
 
+	  // === MẸ → CON ===
+	  const midY = motherBottomY + GAP_MC_TOP;
+	  const childTopY = d.target.y - 60;
+
+	  return `
+		M ${d.source.x},${fatherBottomY}
+		V ${motherTopY}        /* CHA → MẸ (20) */
+		V ${motherBottomY}     /* qua node MẸ (160) */
+		V ${midY}              /* MẸ → CON (20) */
+		H ${d.target.x}        /* đoạn ngang */
+		V ${childTopY}         /* xuống CON (100) */
+	  `;
+	})
 
   // Vẽ các node
   const node = g.selectAll(".node")
