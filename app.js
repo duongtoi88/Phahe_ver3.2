@@ -68,7 +68,7 @@ function convertToSubTree(rows, rootID, includeGirls = false) {
       death: row["Năm mất"] || "",
       info: row["Thông tin chi tiết"] || "",
       father: row["ID cha"] ? String(row["ID cha"]).replace('.0', '') : null,
-      mother: row["ID mẹ"] ? String(row["ID mẹ"]).replace('.0', '') : null,
+      mother: row["ID me"] ? String(row["ID me"]).replace('.0', '') : null,
       spouse: row["ID chồng"] ? String(row["ID chồng"]).replace('.0', '') : null,
       doi: row["Đời"] || "",
       dinh: row["Đinh"] || "",
@@ -137,39 +137,9 @@ function drawTree(data) {
 
   // Thiết lập layout dạng cây
   const nodeWidth = 120;
-  const nodeHeight = 200;
+  const nodeHeight = 360;
   const treeLayout = d3.tree().nodeSize([nodeWidth, nodeHeight]);
   treeLayout(root);
-	  function computeMotherPositions(root) {
-	  const motherMap = {};
-
-	  root.descendants().forEach(d => {
-		const motherID = d.data.mother;
-		if (!motherID) return;
-
-		if (!motherMap[motherID]) {
-		  motherMap[motherID] = {
-			id: motherID,
-			children: [],
-			x: d.x,
-			y: d.y
-		  };
-		}
-		motherMap[motherID].children.push(d);
-	  });
-
-	  Object.values(motherMap).forEach(m => {
-		// mẹ nằm giữa các con
-		const avgX = d3.mean(m.children, c => c.x);
-		const minY = d3.min(m.children, c => c.y);
-
-		m.x = avgX;
-		m.y = minY - nodeHeight * 0.66; // mẹ nằm giữa cha & con
-	  });
-
-	  return motherMap;
-	}
-
 
   // Tính bounding box thực tế
   const bounds = root.descendants().reduce(
@@ -202,53 +172,22 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
     .attr("transform", `translate(${translateX}, ${translateY})`);
 
   // Vẽ đường nối
-  const mothers = computeMotherPositions(root);
-
-	// 1️⃣ Vẽ cha → mẹ (1/3 khoảng cách)
-	g.selectAll(".link-father-mother")
-	  .data(root.links().filter(l => {
-		return l.target.data.mother && mothers[l.target.data.mother];
-	  }))
-	  .enter()
-	  .append("path")
-	  .attr("class", "link")
-	  .attr("stroke", "#888")
-	  .attr("fill", "none")
-	  .attr("stroke-width", 2)
-	  .attr("d", d => {
-		  const m = mothers[d.target.data.mother];
-		  const midY = d.source.y + (m.y - d.source.y) / 2;
-
-		  return `
-			M ${d.source.x},${d.source.y}
-			V ${midY}
-			H ${m.x}
-			V ${m.y}
-		  `;
-		});
-
-
-	// 2️⃣ Vẽ mẹ → con (2/3 còn lại)
-	g.selectAll(".link-mother-child")
-	  .data(root.descendants().filter(d => d.data.mother && mothers[d.data.mother]))
-	  .enter()
-	  .append("path")
-	  .attr("class", "link")
-	  .attr("stroke", "#555")
-	  .attr("fill", "none")
-	  .attr("stroke-width", 2)
-		.attr("d", d => {
-		  const m = mothers[d.data.mother];
-		  const midY = m.y + (d.y - m.y) / 2;
-
-		  return `
-			M ${m.x},${m.y}
-			V ${midY}
-			H ${d.x}
-			V ${d.y}
-		  `;
-		});
-
+  g.selectAll(".link")
+    .data(root.links())
+    .enter()
+    .append("path")
+    .attr("class", "link")
+    .attr("fill", "none")
+    .attr("stroke", "transparent")
+    .attr("stroke-width", 2)
+    .attr("d", d => {
+      const x1 = d.source.x;
+      const y1 = d.source.y;
+      const x2 = d.target.x;
+      const y2 = d.target.y;
+      const midY = (y1 + y2) / 2;
+      return `M ${x1},${y1} V ${midY} H ${x2} V ${y2}`;
+    });
 
   // Vẽ các node
   const node = g.selectAll(".node")
@@ -283,35 +222,6 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
     .style("font-size", "12px")
     .attr("fill", "black")
     .text(d => (d.data.birth || "") + " - " + (d.data.death || ""));
-	
-	// Vẽ node mẹ
-	const motherNodes = Object.values(mothers);
-
-	const mNode = g.selectAll(".node-mother")
-	  .data(motherNodes)
-	  .enter()
-	  .append("g")
-	  .attr("class", "node mother")
-	  .attr("transform", d => `translate(${d.x},${d.y})`);
-
-	mNode.append("rect")
-	  .attr("x", -35)
-	  .attr("y", -45)
-	  .attr("width", 70)
-	  .attr("height", 90)
-	  .attr("rx", 10)
-	  .attr("ry", 10)
-	  .attr("fill", "#ffe0e6")
-	  .attr("stroke", "#d66");
-
-	mNode.append("text")
-	  .attr("text-anchor", "middle")
-	  .style("font-size", "11px")
-	  .text(d => {
-		const p = window.rawRows.find(r => String(r.ID).replace('.0','') === d.id);
-		return p ? p["Họ và tên"] : "Mẹ";
-	  });
-
   
   // Cuộn cây sao cho node gốc ra giữa màn hình
     setTimeout(() => {
@@ -328,7 +238,7 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
     const scrollX = centerX - container.clientWidth / 2;
     container.scrollLeft = scrollX;
   }, 50);
-
+	MotherLayer.render(root, g, nodeHeight);
 }
 
 // Tooltip ngắn khi hover
