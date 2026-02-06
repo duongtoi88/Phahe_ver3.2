@@ -95,8 +95,7 @@ window.MotherLayer = (function () {
 		if (m.children.length > 0) {
 		  const children = m.children;
 
-		  const yBranch = m.y + (children[0].y - m.y) / 2;
-
+		  const yBranch = m.y + (d * 2 / 3) / 2;
 		  const minX = Math.min(...children.map(c => c.x));
 		  const maxX = Math.max(...children.map(c => c.x));
 
@@ -180,3 +179,4 @@ window.MotherLayer = (function () {
   };
 
 })();
+
