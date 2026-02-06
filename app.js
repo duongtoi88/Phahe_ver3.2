@@ -1,44 +1,43 @@
-// ================================
+// =======================================
 // PHẢ HỆ – FAMILY NODE [CHA | MẸ]
-// XOAY CẢ NODE (GROUP <g>)
-// FULL app.js – D3 v7
-// ================================
+// - Node dựng dọc
+// - Cha (dọc) bên trái | Mẹ (dọc) bên phải
+// - Ép khoảng cách theo đời (KHÔNG đè)
+// D3 v7
+// =======================================
 
 // ---------- LOAD EXCEL ----------
 window.onload = () => {
-  fetch('input.xlsx')
+  fetch("input.xlsx")
     .then(res => res.arrayBuffer())
-    .then(data => {
-      const workbook = XLSX.read(data, { type: 'array' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    .then(buf => {
+      const wb = XLSX.read(buf, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet);
 
       const people = normalizeRows(rows);
       const families = buildFamilyNodes(people);
-      const treeData = buildFamilyTree(families);
+      const treeData = buildTree(families);
 
       drawTree(treeData);
     })
-    .catch(err => console.error("Không đọc được Excel:", err));
+    .catch(err => console.error("Excel load error:", err));
 };
 
 // ---------- NORMALIZE ----------
 function normalizeRows(rows) {
   return rows.map(r => ({
-    id: String(r.ID).replace('.0',''),
+    id: String(r.ID).replace(".0", ""),
     name: r["Họ và tên"] || "",
-    birth: r["Năm sinh"] || "",
-    death: r["Năm mất"] || "",
-    father: r["ID cha"] ? String(r["ID cha"]).replace('.0','') : null,
-    mother: r["ID mẹ"] ? String(r["ID mẹ"]).replace('.0','') : null,
-    doi: r["Đời"] || ""
+    father: r["ID cha"] ? String(r["ID cha"]).replace(".0", "") : null,
+    mother: r["ID mẹ"] ? String(r["ID mẹ"]).replace(".0", "") : null
   }));
 }
 
-// ---------- BUILD FAMILY NODES ----------
+// ---------- BUILD FAMILY ----------
 function buildFamilyNodes(people) {
   const map = {};
-  const families = [];
+  const list = [];
 
   people.forEach(p => {
     if (!p.father || !p.mother) return;
@@ -55,20 +54,21 @@ function buildFamilyNodes(people) {
         motherName: mother?.name || "Mẹ ?",
         children: []
       };
-      families.push(map[fid]);
+      list.push(map[fid]);
     }
 
     map[fid].children.push({
-      ...p,
-      type: "child"
+      id: p.id,
+      type: "child",
+      name: p.name
     });
   });
 
-  return families;
+  return list;
 }
 
 // ---------- BUILD TREE ----------
-function buildFamilyTree(families) {
+function buildTree(families) {
   return {
     id: "ROOT",
     type: "root",
@@ -76,13 +76,12 @@ function buildFamilyTree(families) {
   };
 }
 
-// ---------- DRAW TREE ----------
+// ---------- DRAW ----------
 function drawTree(treeData) {
   d3.select("#tree-container").selectAll("svg").remove();
 
-  // 👉 THAM SỐ QUAN TRỌNG – GIẢM GHI ĐÈ
-  const nodeWidth = 80;     // khoảng cách ngang
-  const nodeHeight = 200;  // khoảng cách dọc
+  const NODE_X = 90;      // khoảng cách ngang
+  const LEVEL_Y = 240;   // khoảng cách giữa các đời (QUAN TRỌNG)
 
   const root = d3.hierarchy(treeData, d => {
     if (d.type === "root") return d.children;
@@ -90,12 +89,15 @@ function drawTree(treeData) {
     return null;
   });
 
-  const treeLayout = d3.tree()
-    .nodeSize([nodeWidth, nodeHeight]);
-
+  const treeLayout = d3.tree().nodeSize([NODE_X, LEVEL_Y]);
   treeLayout(root);
 
-  const nodes = root.descendants();
+  // 👉 ÉP Y THEO ĐỜI (KHÔNG ĐÈ NODE)
+  root.descendants().forEach(d => {
+    d.y = d.depth * LEVEL_Y;
+  });
+
+  const nodes = root.descendants().filter(d => d.data.type !== "root");
   const links = root.links();
 
   const minX = d3.min(nodes, d => d.x);
@@ -114,7 +116,7 @@ function drawTree(treeData) {
   const g = svg.append("g")
     .attr("transform", `translate(${150 - minX},${150 - minY})`);
 
-  // ---------- LINKS (KHÔNG XOAY) ----------
+  // ---------- LINKS ----------
   g.selectAll(".link")
     .data(links)
     .enter()
@@ -124,7 +126,7 @@ function drawTree(treeData) {
     .attr("stroke", "#666")
     .attr("stroke-width", 1.5)
     .attr("d", d => {
-      const midY = (d.source.y + d.target.y) / 2;
+      const midY = d.source.y + LEVEL_Y / 2;
       return `
         M ${d.source.x},${d.source.y}
         V ${midY}
@@ -133,56 +135,81 @@ function drawTree(treeData) {
       `;
     });
 
-  // ---------- NODES (XOAY CẢ GROUP) ----------
+  // ---------- NODES ----------
   const node = g.selectAll(".node")
-    .data(nodes.filter(d => d.data.type !== "root"))
+    .data(nodes)
     .enter()
     .append("g")
     .attr("class", d => `node ${d.data.type}`)
-    .attr("transform", d => `
-      translate(${d.x},${d.y})
-      rotate(90)
-    `);
+    .attr("transform", d => `translate(${d.x},${d.y})`);
 
   // ---------- FAMILY NODE ----------
-  const familyNode = node.filter(d => d.data.type === "family");
+  const family = node.filter(d => d.data.type === "family");
 
-  familyNode.append("rect")
-    .attr("x", -30)
+  family.append("rect")
+    .attr("x", -40)
     .attr("y", -90)
-    .attr("width", 60)
+    .attr("width", 80)
     .attr("height", 180)
     .attr("rx", 8)
     .attr("fill", "#e7f1ff")
-    .attr("stroke", "#0d6efd");
+    .attr("stroke", "#0d6efd")
+    .attr("stroke-width", 2);
 
-  familyNode.append("text")
+  // CHA (trái, dọc)
+  family.append("text")
+    .attr("x", -18)
+    .attr("y", 0)
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
+    .attr("writing-mode", "vertical-rl")
+    .attr("text-orientation", "mixed")
     .style("font-size", "12px")
-    .text(d => `${d.data.fatherName} | ${d.data.motherName}`);
+    .text(d => d.data.fatherName);
+
+  // ĐƯỜNG PHÂN CÁCH |
+  family.append("line")
+    .attr("x1", 0)
+    .attr("y1", -80)
+    .attr("x2", 0)
+    .attr("y2", 80)
+    .attr("stroke", "#0d6efd")
+    .attr("stroke-width", 1.5);
+
+  // MẸ (phải, dọc)
+  family.append("text")
+    .attr("x", 18)
+    .attr("y", 0)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .attr("writing-mode", "vertical-rl")
+    .attr("text-orientation", "mixed")
+    .style("font-size", "12px")
+    .text(d => d.data.motherName);
 
   // ---------- CHILD NODE ----------
-  const childNode = node.filter(d => d.data.type === "child");
+  const child = node.filter(d => d.data.type === "child");
 
-  childNode.append("rect")
-    .attr("x", -25)
+  child.append("rect")
+    .attr("x", -30)
     .attr("y", -45)
-    .attr("width", 50)
+    .attr("width", 60)
     .attr("height", 90)
     .attr("rx", 6)
-    .attr("fill", "#ffffff")
+    .attr("fill", "#fff")
     .attr("stroke", "#333");
 
-  childNode.append("text")
+  child.append("text")
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
+    .attr("writing-mode", "vertical-rl")
+    .attr("text-orientation", "mixed")
     .style("font-size", "11px")
     .text(d => d.data.name);
 
   // ---------- AUTO CENTER ----------
   setTimeout(() => {
-    const container = document.getElementById("tree-container");
-    container.scrollLeft = (width - container.clientWidth) / 2;
+    const c = document.getElementById("tree-container");
+    c.scrollLeft = (width - c.clientWidth) / 2;
   }, 50);
 }
