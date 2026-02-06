@@ -68,7 +68,7 @@ function convertToSubTree(rows, rootID, includeGirls = false) {
       death: row["Năm mất"] || "",
       info: row["Thông tin chi tiết"] || "",
       father: row["ID cha"] ? String(row["ID cha"]).replace('.0', '') : null,
-      mother: row["ID mẹ"] ? String(row["ID mẹ"]).replace('.0', '') : null,
+      mother: row["ID me"] ? String(row["ID me"]).replace('.0', '') : null,
       spouse: row["ID chồng"] ? String(row["ID chồng"]).replace('.0', '') : null,
       doi: row["Đời"] || "",
       dinh: row["Đinh"] || "",
@@ -238,7 +238,7 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
     const scrollX = centerX - container.clientWidth / 2;
     container.scrollLeft = scrollX;
   }, 50);
-  // ===== VER 3.2: Vẽ node MẸ =====
+  // ===== VER 3.2: Vẽ node me =====
 if (window.peopleMap && typeof renderMotherNodes === "function") {
   renderMotherNodes(g, root.descendants(), window.peopleMap);
 }
@@ -273,4 +273,5 @@ function showQuickTooltip(event, data) {
 function openDetailTab(id) {
   window.location.href = `detail.html?id=${id}`;
 }
+
 
