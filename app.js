@@ -140,40 +140,36 @@ function drawTree(data) {
   const nodeHeight = 200;
   const treeLayout = d3.tree().nodeSize([nodeWidth, nodeHeight]);
   treeLayout(root);
-	function computeMotherPositions(root) {
+	  function computeMotherPositions(root) {
 	  const motherMap = {};
-	
-	  root.descendants().forEach(child => {
-	    const motherID = child.data.mother;
-	    if (!motherID) return;
-	
-	    const father = child.parent;
-	    if (!father) return;
-	
-	    if (!motherMap[motherID]) {
-	      motherMap[motherID] = {
-	        id: motherID,
-	        children: [],
-	        father: father,
-	        x: 0,
-	        y: 0
-	      };
-	    }
-	    motherMap[motherID].children.push(child);
+
+	  root.descendants().forEach(d => {
+		const motherID = d.data.mother;
+		if (!motherID) return;
+
+		if (!motherMap[motherID]) {
+		  motherMap[motherID] = {
+			id: motherID,
+			children: [],
+			x: d.x,
+			y: d.y
+		  };
+		}
+		motherMap[motherID].children.push(d);
 	  });
-	
+
 	  Object.values(motherMap).forEach(m => {
-	    const avgChildX = d3.mean(m.children, c => c.x);
-	    const fatherY = m.father.y;
-	    const childY = d3.min(m.children, c => c.y);
-	
-	    // mẹ nằm giữa cha & con
-	    m.x = avgChildX;
-	    m.y = fatherY + (childY - fatherY) / 3;
+		// mẹ nằm giữa các con
+		const avgX = d3.mean(m.children, c => c.x);
+		const minY = d3.min(m.children, c => c.y);
+
+		m.x = avgX;
+		m.y = minY - nodeHeight * 0.66; // mẹ nằm giữa cha & con
 	  });
-	
+
 	  return motherMap;
 	}
+
 
   // Tính bounding box thực tế
   const bounds = root.descendants().reduce(
@@ -220,13 +216,17 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
 	  .attr("fill", "none")
 	  .attr("stroke-width", 2)
 	  .attr("d", d => {
-		const m = mothers[d.target.data.mother];
-		const yMid = d.source.y + (m.y - d.source.y) / 3;
-		return `M ${d.source.x},${d.source.y}
-				V ${yMid}
-				H ${m.x}
-				V ${m.y}`;
-	  });
+		  const m = mothers[d.target.data.mother];
+		  const midY = d.source.y + (m.y - d.source.y) / 2;
+
+		  return `
+			M ${d.source.x},${d.source.y}
+			V ${midY}
+			H ${m.x}
+			V ${m.y}
+		  `;
+		});
+
 
 	// 2️⃣ Vẽ mẹ → con (2/3 còn lại)
 	g.selectAll(".link-mother-child")
@@ -237,14 +237,17 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
 	  .attr("stroke", "#555")
 	  .attr("fill", "none")
 	  .attr("stroke-width", 2)
-	  .attr("d", d => {
-		const m = mothers[d.data.mother];
-		const yMid = m.y + (d.y - m.y) * 2 / 3;
-		return `M ${m.x},${m.y}
-				V ${yMid}
-				H ${d.x}
-				V ${d.y}`;
-	  });
+		.attr("d", d => {
+		  const m = mothers[d.data.mother];
+		  const midY = m.y + (d.y - m.y) / 2;
+
+		  return `
+			M ${m.x},${m.y}
+			V ${midY}
+			H ${d.x}
+			V ${d.y}
+		  `;
+		});
 
 
   // Vẽ các node
@@ -355,4 +358,3 @@ function showQuickTooltip(event, data) {
 function openDetailTab(id) {
   window.location.href = `detail.html?id=${id}`;
 }
-
