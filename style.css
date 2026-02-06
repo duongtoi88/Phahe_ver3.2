@@ -70,3 +70,12 @@ body {
   stroke-width: 3;
   stroke: #dc3545;
 }
+.node.mother rect {
+  fill: #ffe6ee;
+  stroke: #c2185b;
+}
+
+.node.mother text {
+  fill: #000;
+  font-size: 12px;
+}

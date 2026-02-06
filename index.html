@@ -1,76 +1,34 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>Phả hệ – Family Node [Cha | Mẹ]</title>
-
-  <!-- Base nếu deploy GitHub Pages -->
-  <base href="./" />
-
-  <!-- SheetJS đọc Excel -->
+  <meta charset="UTF-8">
+  <title>Phả hệ Dương Danh</title>
+  <base href="https://duongtoi88.github.io/Pha_he/">
+  <!-- Nhúng SheetJS để đọc file Excel -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-
-  <!-- D3.js v7 -->
+  <!-- Nhúng D3.js để vẽ sơ đồ -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
-
-  <!-- App logic -->
   <script defer src="app.js"></script>
-
-  <!-- Style -->
-  <link rel="stylesheet" href="style.css" />
-
-  <style>
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-
-    h2 {
-      margin: 10px;
-    }
-
-    #toolbar {
-      margin: 10px;
-    }
-
-    #tree-container {
-      width: 100%;
-      height: calc(100vh - 80px);
-      overflow: auto;
-      border-top: 1px solid #ccc;
-    }
-
-    /* FAMILY NODE */
-    .node.family rect {
-      fill: #e7f1ff;
-      stroke: #0d6efd;
-    }
-
-    /* CHILD NODE */
-    .node.child rect {
-      fill: #ffffff;
-      stroke: #333;
-    }
-
-    .link {
-      fill: none;
-      stroke: #777;
-      stroke-width: 1.5px;
-    }
-  </style>
+  <script src="mother-nodes.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-  <h2>Phả hệ – Family Node [ Cha | Mẹ ]</h2>
-
-  <!-- Toolbar (để mở rộng về sau) -->
-  <div id="toolbar">
-    <!-- chừa sẵn cho Ver sau -->
-    <!-- Ví dụ: checkbox ẩn/hiện nhánh, tìm kiếm, export PDF -->
+  <h2>Phả hệ Dương Danh ở Quốc Oai</h2>
+  
+  <!-- Thêm dropdown chọn ID gốc (sẽ được tạo bằng JS) -->
+  <div style="margin: 10px;">
+    <label for="rootSelector"><b>Chọn ID gốc:</b></label>
+    <!-- select sẽ được JS thêm vào -->
+  </div>
+  
+  <div style="margin: 0 10px 10px;">
+    <label><input type="checkbox" id="showGirls" style="margin-right: 6px;">Cả Nam & Nữ</label>
   </div>
 
-  <!-- Tree -->
-  <div id="tree-container"></div>
+  <!-- Khu vực hiển thị cây phả hệ -->
+<div id="tree-container" style="overflow-x: auto; overflow-y: auto; white-space: nowrap; height: 100vh;"></div>
+
+  <!-- Tooltip vẫn giữ lại để gợi ý khi hover nếu cần -->
+  <div id="tooltip" class="tooltip" style="display: none;"></div>
 </body>
 </html>
