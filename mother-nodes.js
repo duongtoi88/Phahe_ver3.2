@@ -1,53 +1,55 @@
 // mother-nodes.js
-// Ver 3.3.1 – Multiple wives in ONE ROW (below father)
+// Version: đúng luồng CHA → VỢ → CON
 
 function renderMotherNodes(g, nodes, peopleMap) {
   if (!window.rawRows) return;
 
-  const motherData = [];
+  const blocks = [];
 
   nodes.forEach(d => {
     const fatherID = d.data.id;
+    const fatherX = d.x;
+    const fatherY = d.y;
 
-    // Lấy tất cả vợ của cha này
-    const wives = window.rawRows.filter(r => {
-      const idChong = r["ID chồng"]
-        ? String(r["ID chồng"]).replace(".0", "")
-        : null;
-      return idChong === fatherID;
-    });
+    // Lấy tất cả vợ của cha
+    const wives = window.rawRows.filter(r =>
+      String(r["ID chồng"] || "").replace(".0", "") === fatherID
+    );
 
-    if (!wives.length) return;
-
-    const wifeCount = wives.length;
-    const spacing = 100; // khoảng cách giữa các vợ
-    const startX = d.x - ((wifeCount - 1) * spacing) / 2;
-
-    wives.forEach((wife, index) => {
+    wives.forEach((wife, wIndex) => {
       const wifeID = String(wife.ID).replace(".0", "");
       const wifePerson = peopleMap[wifeID];
       if (!wifePerson) return;
 
-      motherData.push({
-        mother: wifePerson,
-        x: startX + index * spacing,
-        y: d.y + 150,   // DƯỚI CHA
-        fatherX: d.x,
-        fatherY: d.y
+      // Lấy con của VỢ NÀY
+      const children = window.rawRows.filter(r =>
+        String(r["ID cha"] || "").replace(".0", "") === fatherID &&
+        String(r["ID me"] || "").replace(".0", "") === wifeID
+      );
+
+      const fatherBottomY = fatherY + 60;
+      const junctionY = fatherBottomY + 40 + wIndex * 180;
+
+      blocks.push({
+        wife: wifePerson,
+        children,
+        fatherX,
+        fatherBottomY,
+        junctionY
       });
     });
   });
 
-  /* ===== NODE VỢ ===== */
-  const mg = g.selectAll(".mother-node")
-    .data(motherData, d => d.mother.id)
+  /* ====== VẼ VỢ ====== */
+  const wifeNodes = g.selectAll(".wife-node")
+    .data(blocks)
     .enter()
     .append("g")
-    .attr("class", "mother-node")
-    .attr("transform", d => `translate(${d.x},${d.y})`)
-    .on("click", (e, d) => openDetailTab(d.mother.id));
+    .attr("class", "wife-node")
+    .attr("transform", d => `translate(${d.fatherX},${d.junctionY + 60})`)
+    .on("click", (e, d) => openDetailTab(d.wife.id));
 
-  mg.append("rect")
+  wifeNodes.append("rect")
     .attr("x", -40)
     .attr("y", -60)
     .attr("width", 80)
@@ -56,33 +58,52 @@ function renderMotherNodes(g, nodes, peopleMap) {
     .attr("ry", 10)
     .attr("class", "mother-rect");
 
-  mg.append("text")
+  wifeNodes.append("text")
     .attr("text-anchor", "middle")
-    .attr("fill", "black")
     .style("font-size", "12px")
-    .text(d => d.mother.name);
+    .text(d => d.wife.name);
 
-  /* ===== ĐƯỜNG NỐI CHA → VỢ ===== */
-  g.selectAll(".link-wife")
-    .data(motherData)
+  /* ====== CHA → VỢ ====== */
+  g.selectAll(".link-father-wife")
+    .data(blocks)
     .enter()
     .append("path")
-    .attr("class", "link-wife")
+    .attr("class", "link-father-wife")
     .attr("fill", "none")
     .attr("stroke", "#999")
     .attr("stroke-width", 2)
-    .attr("d", d => {
-      const x1 = d.fatherX;
-      const y1 = d.fatherY + 60;   // đáy cha
-      const x2 = d.x;
-      const y2 = d.y - 60;         // đỉnh vợ
-      const midY = (y1 + y2) / 2;
+    .attr("d", d => `
+      M ${d.fatherX},${d.fatherBottomY}
+      V ${d.junctionY}
+      V ${d.junctionY + 60}
+    `);
 
-      return `
-        M ${x1},${y1}
-        V ${midY}
-        H ${x2}
-        V ${y2}
-      `;
+  /* ====== VỢ → CON ====== */
+  blocks.forEach(block => {
+    const spacing = 100;
+    const startX = block.fatherX - ((block.children.length - 1) * spacing) / 2;
+
+    block.children.forEach((child, i) => {
+      const childID = String(child.ID).replace(".0", "");
+      const childNode = g.selectAll(".node")
+        .filter(d => d.data.id === childID)
+        .datum();
+
+      if (!childNode) return;
+
+      const childTopY = childNode.y - 60;
+      const x = startX + i * spacing;
+
+      g.append("path")
+        .attr("class", "link-wife-child")
+        .attr("fill", "none")
+        .attr("stroke", "#555")
+        .attr("stroke-width", 2)
+        .attr("d", `
+          M ${block.fatherX},${block.junctionY}
+          H ${x}
+          V ${childTopY}
+        `);
     });
+  });
 }

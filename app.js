@@ -174,21 +174,26 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
 
   // Vẽ đường nối
   g.selectAll(".link")
-    .data(root.links())
-    .enter()
-    .append("path")
-    .attr("class", "link")
-    .attr("fill", "none")
-    .attr("stroke", "#555")
-    .attr("stroke-width", 2)
-    .attr("d", d => {
-      const x1 = d.source.x;
-      const y1 = d.source.y + 60;
-      const x2 = d.target.x;
-      const y2 = d.target.y - 60;
-      const midY = (y1 + y2) / 2;
-      return `M ${x1},${y1} V ${midY} H ${x2} V ${y2}`;
-    });
+	  .data(root.links())
+	  .enter()
+	  .append("path")
+	  .attr("class", "link")
+	  .attr("fill", "none")
+	  .attr("stroke", "#555")
+	  .attr("stroke-width", 2)
+	  .attr("d", d => {
+		const fatherBottomY = d.source.y + 60;
+		const junctionY = fatherBottomY + 40;   // ← ĐOẠN DỌC THỨ NHẤT
+		const childTopY = d.target.y - 60;
+
+		return `
+		  M ${d.source.x},${fatherBottomY}
+		  V ${junctionY}
+		  H ${d.target.x}
+		  V ${childTopY}
+		`;
+	  });
+
 
   // Vẽ các node
   const node = g.selectAll(".node")
@@ -274,4 +279,3 @@ function showQuickTooltip(event, data) {
 function openDetailTab(id) {
   window.location.href = `detail.html?id=${id}`;
 }
-
