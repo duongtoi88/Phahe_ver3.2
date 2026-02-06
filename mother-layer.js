@@ -107,7 +107,7 @@ window.MotherLayer = (function () {
 			.attr("stroke", "#555")
 			.attr("stroke-width", 2)
 			.attr("d", `
-			  M ${m.x},${m.y + NODE_HALF_HEIGHT}
+			  M ${m.x},${m.y + 60}
 			  V ${yBranch}
 			`);
 
@@ -131,7 +131,7 @@ window.MotherLayer = (function () {
 			  .attr("stroke-width", 2)
 			  .attr("d", `
 				M ${c.x},${yBranch}
-				V ${c.y - NODE_HALF_HEIGHT}
+				V ${c.y - 60}
 			  `);
 		  });
 		}
