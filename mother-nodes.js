@@ -1,47 +1,39 @@
 // =======================================
 // mother-nodes.js
-// VẼ NODE MẸ (OVERLAY)
-// - Giữ nguyên tree cha → con
-// - Hỗ trợ 1 cha – N vợ
-// - Con nối từ ĐÚNG mẹ
+// CÁCH A1: CHA – (N MẸ) – HUB – CON
+// - Tree gốc: CHA → CON (giữ nguyên)
+// - Overlay: mỗi (CHA + MẸ) = 1 HUB
+// - Hỗ trợ nhiều vợ, KHÔNG link ngang dài
 // =======================================
 
 (function () {
 
-  // expose để app.js gọi lại sau mỗi drawTree()
+  // expose để app.js gọi sau mỗi drawTree()
   window.drawMotherNodes = drawMotherNodes;
 
   function drawMotherNodes() {
-    // kiểm tra dependency
     if (!window.treeRoot || !window.treeGroup || !window.rawRows) {
-      console.warn("Mother nodes: missing dependency");
       return;
     }
 
     const g = window.treeGroup;
     const rows = window.rawRows;
 
-    // ==============================
-    // MAP RAW ROWS THEO ID (CHUẨN)
-    // ==============================
+    // ===== MAP RAW ROWS THEO ID =====
     const peopleById = {};
     rows.forEach(r => {
       const id = String(r.ID).replace('.0', '');
       peopleById[id] = r;
     });
 
-    // ==============================
-    // MAP NODE TREE THEO ID
-    // ==============================
+    // ===== MAP NODE TREE THEO ID =====
     const nodeById = {};
     window.treeRoot.descendants().forEach(d => {
       nodeById[d.data.id] = d;
     });
 
-    // ==============================
-    // GOM CON THEO (CHA → MẸ)
+    // ===== GOM CON THEO (CHA → MẸ) =====
     // familyMap[fatherId][motherId] = [childNode, ...]
-    // ==============================
     const familyMap = {};
 
     window.treeRoot.descendants().forEach(d => {
@@ -58,31 +50,33 @@
       });
     });
 
-    // ==============================
-    // VẼ NODE MẸ (XẾP NGANG)
-    // ==============================
+    // ===== VẼ CHA → (N MẸ) → HUB → CON =====
     Object.entries(familyMap).forEach(([fatherId, wives]) => {
       const fatherNode = nodeById[fatherId];
       if (!fatherNode) return;
 
       const wifeIds = Object.keys(wives);
-      const spacingX = 100;   // khoảng cách ngang giữa các vợ
-      const offsetY = 140;    // khoảng cách dọc so với cha
+
+      const spacingX = 120; // khoảng cách ngang giữa các mẹ
+      const offsetMotherY = 90;  // mẹ dưới cha
+      const offsetHubY = 120;    // hub dưới mẹ
 
       wifeIds.forEach((motherId, index) => {
         const mother = peopleById[motherId];
         if (!mother) return;
 
-        // căn giữa nhiều vợ
+        // căn các mẹ quanh trục cha
         const x =
           fatherNode.x +
           (index - (wifeIds.length - 1) / 2) * spacingX;
-        const y = fatherNode.y + offsetY;
+
+        const motherY = fatherNode.y + offsetMotherY;
+        const hubY = fatherNode.y + offsetHubY;
 
         // ===== NODE MẸ =====
         const mg = g.append("g")
           .attr("class", "node mother")
-          .attr("transform", `translate(${x},${y})`);
+          .attr("transform", `translate(${x},${motherY})`);
 
         mg.append("rect")
           .attr("x", -40)
@@ -101,7 +95,32 @@
           .style("font-size", "12px")
           .text(mother["Họ và tên"] || "");
 
-        // ===== LINK MẸ → CON =====
+        // ===== LINK CHA → MẸ =====
+        g.append("line")
+          .attr("x1", fatherNode.x)
+          .attr("y1", fatherNode.y + 60)
+          .attr("x2", x)
+          .attr("y2", motherY - 25)
+          .attr("stroke", "#c2185b")
+          .attr("stroke-width", 1.2);
+
+        // ===== HUB (điểm nối) =====
+        g.append("circle")
+          .attr("cx", x)
+          .attr("cy", hubY)
+          .attr("r", 2.5)
+          .attr("fill", "#c2185b");
+
+        // ===== LINK MẸ → HUB =====
+        g.append("line")
+          .attr("x1", x)
+          .attr("y1", motherY + 25)
+          .attr("x2", x)
+          .attr("y2", hubY)
+          .attr("stroke", "#c2185b")
+          .attr("stroke-width", 1.2);
+
+        // ===== LINK HUB → CON =====
         wives[motherId].forEach(childNode => {
           g.append("path")
             .attr("fill", "none")
@@ -109,7 +128,7 @@
             .attr("stroke-width", 1.2)
             .attr("d", () => {
               const x1 = x;
-              const y1 = y - 25;
+              const y1 = hubY;
               const x2 = childNode.x;
               const y2 = childNode.y;
               const midY = (y1 + y2) / 2;
