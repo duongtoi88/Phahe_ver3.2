@@ -183,7 +183,7 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
 	  .attr("stroke-width", 2)
 	  .attr("d", d => {
 		const fatherBottomY = d.source.y + 60;
-		const junctionY = fatherBottomY + 40;   // ← ĐOẠN DỌC THỨ NHẤT
+		const junctionY = fatherBottomY + 160;   // ← ĐOẠN DỌC THỨ NHẤT
 		const childTopY = d.target.y - 60;
 
 		return `

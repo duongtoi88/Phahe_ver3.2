@@ -1,55 +1,68 @@
 // mother-nodes.js
-// Version: đúng luồng CHA → VỢ → CON
+// FINAL VERSION
+// - KHÔNG vẽ nối mẹ–con
+// - Mẹ chỉ nằm trong đoạn dọc thứ 1 (cha → junction)
+// - Nhiều vợ, xếp gọn, không phá luồng con
 
 function renderMotherNodes(g, nodes, peopleMap) {
   if (!window.rawRows) return;
 
-  const blocks = [];
+  const mothers = [];
 
   nodes.forEach(d => {
     const fatherID = d.data.id;
     const fatherX = d.x;
     const fatherY = d.y;
 
-    // Lấy tất cả vợ của cha
+    // Lấy tất cả vợ của người cha này
     const wives = window.rawRows.filter(r =>
       String(r["ID chồng"] || "").replace(".0", "") === fatherID
     );
 
-    wives.forEach((wife, wIndex) => {
+    if (!wives.length) return;
+
+    // Tọa độ đáy node cha
+    const fatherBottomY = fatherY + 60;
+
+    // JunctionY PHẢI trùng với junction trong app.js
+    // (app.js đang dùng: fatherBottomY + 160)
+    const junctionY = fatherBottomY + 160;
+
+    // Chiều cao node mẹ
+    const motherHeight = 120;
+
+    // Khoảng không gian đoạn dọc thứ 1
+    const trunkHeight = junctionY - fatherBottomY;
+
+    // Vị trí trung tâm cho mẹ (nằm trọn trong đoạn dọc 1)
+    const centerY = fatherBottomY + trunkHeight / 2;
+
+    // Nếu nhiều vợ → xếp so le rất nhẹ theo X (KHÔNG chen luồng con)
+    const offsetX = 90;
+
+    wives.forEach((wife, index) => {
       const wifeID = String(wife.ID).replace(".0", "");
       const wifePerson = peopleMap[wifeID];
       if (!wifePerson) return;
 
-      // Lấy con của VỢ NÀY
-      const children = window.rawRows.filter(r =>
-        String(r["ID cha"] || "").replace(".0", "") === fatherID &&
-        String(r["ID me"] || "").replace(".0", "") === wifeID
-      );
-
-      const fatherBottomY = fatherY + 60;
-      const junctionY = fatherBottomY + 40 + wIndex * 180;
-
-      blocks.push({
-        wife: wifePerson,
-        children,
-        fatherX,
-        fatherBottomY,
-        junctionY
+      mothers.push({
+        mother: wifePerson,
+        x: fatherX + (index - (wives.length - 1) / 2) * offsetX,
+        y: centerY
       });
     });
   });
 
-  /* ====== VẼ VỢ ====== */
-  const wifeNodes = g.selectAll(".wife-node")
-    .data(blocks)
+  /* ====== VẼ NODE MẸ ====== */
+  const motherNodes = g.selectAll(".mother-node")
+    .data(mothers, d => d.mother.id)
     .enter()
     .append("g")
-    .attr("class", "wife-node")
-    .attr("transform", d => `translate(${d.fatherX},${d.junctionY + 60})`)
-    .on("click", (e, d) => openDetailTab(d.wife.id));
+    .attr("class", "mother-node")
+    .attr("transform", d => `translate(${d.x},${d.y})`)
+    .on("click", (e, d) => openDetailTab(d.mother.id));
 
-  wifeNodes.append("rect")
+  motherNodes.append("rect")
     .attr("x", -40)
     .attr("y", -60)
     .attr("width", 80)
@@ -58,52 +71,9 @@ function renderMotherNodes(g, nodes, peopleMap) {
     .attr("ry", 10)
     .attr("class", "mother-rect");
 
-  wifeNodes.append("text")
+  motherNodes.append("text")
     .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
     .style("font-size", "12px")
-    .text(d => d.wife.name);
-
-  /* ====== CHA → VỢ ====== */
-  g.selectAll(".link-father-wife")
-    .data(blocks)
-    .enter()
-    .append("path")
-    .attr("class", "link-father-wife")
-    .attr("fill", "none")
-    .attr("stroke", "#999")
-    .attr("stroke-width", 2)
-    .attr("d", d => `
-      M ${d.fatherX},${d.fatherBottomY}
-      V ${d.junctionY}
-      V ${d.junctionY + 60}
-    `);
-
-  /* ====== VỢ → CON ====== */
-  blocks.forEach(block => {
-    const spacing = 100;
-    const startX = block.fatherX - ((block.children.length - 1) * spacing) / 2;
-
-    block.children.forEach((child, i) => {
-      const childID = String(child.ID).replace(".0", "");
-      const childNode = g.selectAll(".node")
-        .filter(d => d.data.id === childID)
-        .datum();
-
-      if (!childNode) return;
-
-      const childTopY = childNode.y - 60;
-      const x = startX + i * spacing;
-
-      g.append("path")
-        .attr("class", "link-wife-child")
-        .attr("fill", "none")
-        .attr("stroke", "#555")
-        .attr("stroke-width", 2)
-        .attr("d", `
-          M ${block.fatherX},${block.junctionY}
-          H ${x}
-          V ${childTopY}
-        `);
-    });
-  });
+    .text(d => d.mother.name);
 }
