@@ -1,9 +1,12 @@
 /**
- * MotherLayer module
- * - Không sửa tree layout
- * - Không sửa hierarchy
- * - Chỉ vẽ node mẹ + đường nối cha–mẹ–con
- * - Dùng nodeHeight làm d (khoảng cách cha–con)
+ * MotherLayer – FINAL CLEAN VERSION
+ *
+ * Quy ước:
+ * - d = nodeHeight = khoảng cách CHA → CON
+ * - Mẹ nằm tại 1/3 d
+ * - Con nằm tại d (2/3 d dưới mẹ)
+ * - Đường nối BẮT BUỘC gấp khúc
+ * - Không phá tree, không sửa index/app
  */
 
 window.MotherLayer = (function () {
@@ -13,12 +16,12 @@ window.MotherLayer = (function () {
 
     const mothers = collectMothers(root, d);
     layoutMultipleWives(mothers);
+    drawMotherLinks(g, mothers);
     drawMotherNodes(g, mothers);
-    drawMotherLinks(g, mothers, d);
   }
 
   // --------------------------------------------------
-  // Thu thập mẹ + gán vị trí cơ bản
+  // Thu thập mẹ + ép lại tầng (CHUẨN 1/3 – 2/3)
   // --------------------------------------------------
   function collectMothers(root, d) {
     const map = {};
@@ -36,11 +39,14 @@ window.MotherLayer = (function () {
           father,
           children: [],
           x: father.x,
-          y: father.y + d / 3   // mẹ nằm tại 1/3 d
+          y: father.y + d / 3   // MẸ = 1/3 d
         };
       }
 
       map[motherID].children.push(child);
+
+      // ÉP CON XUỐNG ĐÚNG 2/3 d DƯỚI MẸ
+      child.y = father.y + d;
     });
 
     return map;
@@ -64,6 +70,41 @@ window.MotherLayer = (function () {
       const spacing = 120;
       wives.forEach((m, i) => {
         m.x = m.father.x + (i - (wives.length - 1) / 2) * spacing;
+      });
+    });
+  }
+
+  // --------------------------------------------------
+  // Vẽ đường nối GẤP KHÚC – ĐÚNG TỌA ĐỘ THẬT
+  // --------------------------------------------------
+  function drawMotherLinks(g, mothers) {
+    Object.values(mothers).forEach(m => {
+      const f = m.father;
+
+      // CHA → MẸ (1/3 d)
+      g.append("path")
+        .attr("class", "link link-father-mother")
+        .attr("fill", "none")
+        .attr("stroke", "#555")
+        .attr("stroke-width", 2)
+        .attr("d", `
+          M ${f.x},${f.y}
+          V ${m.y}
+          H ${m.x}
+        `);
+
+      // MẸ → CON (2/3 d)
+      m.children.forEach(c => {
+        g.append("path")
+          .attr("class", "link link-mother-child")
+          .attr("fill", "none")
+          .attr("stroke", "#555")
+          .attr("stroke-width", 2)
+          .attr("d", `
+            M ${m.x},${m.y}
+            V ${c.y}
+            H ${c.x}
+          `);
       });
     });
   }
@@ -102,45 +143,6 @@ window.MotherLayer = (function () {
         );
         return p ? p["Họ và tên"] : "";
       });
-  }
-
-  // --------------------------------------------------
-  // Vẽ đường nối gấp khúc:
-  // - Cha → Mẹ : 1/3 d
-  // - Mẹ → Con : 2/3 d
-  // --------------------------------------------------
-  function drawMotherLinks(g, mothers, d) {
-    Object.values(mothers).forEach(m => {
-      const f = m.father;
-
-      // Cha → Mẹ (1/3 d)
-      g.append("path")
-        .attr("class", "link link-father-mother")
-        .attr("fill", "none")
-        .attr("stroke", "#555")
-        .attr("stroke-width", 2)
-        .attr("d", `
-          M ${f.x},${f.y}
-          V ${f.y + d / 6}
-          H ${m.x}
-          V ${m.y}
-        `);
-
-      // Mẹ → Con (2/3 d)
-      m.children.forEach(c => {
-        g.append("path")
-          .attr("class", "link link-mother-child")
-          .attr("fill", "none")
-          .attr("stroke", "#555")
-          .attr("stroke-width", 2)
-          .attr("d", `
-            M ${m.x},${m.y}
-            V ${m.y + d / 3}
-            H ${c.x}
-            V ${c.y}
-          `);
-      });
-    });
   }
 
   // --------------------------------------------------
