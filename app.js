@@ -1,6 +1,6 @@
 // ================================
 // PHẢ HỆ – FAMILY NODE [CHA | MẸ]
-// NODE DỌC – TEXT XOAY DỌC
+// XOAY CẢ NODE (GROUP <g>)
 // FULL app.js – D3 v7
 // ================================
 
@@ -51,8 +51,6 @@ function buildFamilyNodes(people) {
       map[fid] = {
         id: fid,
         type: "family",
-        fatherID: p.father,
-        motherID: p.mother,
         fatherName: father?.name || "Cha ?",
         motherName: mother?.name || "Mẹ ?",
         children: []
@@ -82,9 +80,9 @@ function buildFamilyTree(families) {
 function drawTree(treeData) {
   d3.select("#tree-container").selectAll("svg").remove();
 
-  // 👉 THAM SỐ QUAN TRỌNG – CHỐNG GHI ĐÈ
-  const nodeWidth = 70;     // hẹp ngang
-  const nodeHeight = 180;  // cao dọc
+  // 👉 THAM SỐ QUAN TRỌNG – GIẢM GHI ĐÈ
+  const nodeWidth = 80;     // khoảng cách ngang
+  const nodeHeight = 200;  // khoảng cách dọc
 
   const root = d3.hierarchy(treeData, d => {
     if (d.type === "root") return d.children;
@@ -116,7 +114,7 @@ function drawTree(treeData) {
   const g = svg.append("g")
     .attr("transform", `translate(${150 - minX},${150 - minY})`);
 
-  // ---------- LINKS ----------
+  // ---------- LINKS (KHÔNG XOAY) ----------
   g.selectAll(".link")
     .data(links)
     .enter()
@@ -135,10 +133,56 @@ function drawTree(treeData) {
       `;
     });
 
-  // ---------- NODES ----------
+  // ---------- NODES (XOAY CẢ GROUP) ----------
   const node = g.selectAll(".node")
     .data(nodes.filter(d => d.data.type !== "root"))
     .enter()
     .append("g")
     .attr("class", d => `node ${d.data.type}`)
-    .
+    .attr("transform", d => `
+      translate(${d.x},${d.y})
+      rotate(90)
+    `);
+
+  // ---------- FAMILY NODE ----------
+  const familyNode = node.filter(d => d.data.type === "family");
+
+  familyNode.append("rect")
+    .attr("x", -30)
+    .attr("y", -90)
+    .attr("width", 60)
+    .attr("height", 180)
+    .attr("rx", 8)
+    .attr("fill", "#e7f1ff")
+    .attr("stroke", "#0d6efd");
+
+  familyNode.append("text")
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .style("font-size", "12px")
+    .text(d => `${d.data.fatherName} | ${d.data.motherName}`);
+
+  // ---------- CHILD NODE ----------
+  const childNode = node.filter(d => d.data.type === "child");
+
+  childNode.append("rect")
+    .attr("x", -25)
+    .attr("y", -45)
+    .attr("width", 50)
+    .attr("height", 90)
+    .attr("rx", 6)
+    .attr("fill", "#ffffff")
+    .attr("stroke", "#333");
+
+  childNode.append("text")
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .style("font-size", "11px")
+    .text(d => d.data.name);
+
+  // ---------- AUTO CENTER ----------
+  setTimeout(() => {
+    const container = document.getElementById("tree-container");
+    container.scrollLeft = (width - container.clientWidth) / 2;
+  }, 50);
+}
