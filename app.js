@@ -1,157 +1,168 @@
-// ===== Helper đọc cột Excel an toàn Unicode =====
+// =====================================================
+// Helper: đọc cột Excel an toàn với Unicode (ID mẹ, ID cha, …)
+// DÁN NGAY TRÊN CÙNG – KHÔNG PHÁ LOGIC CŨ
+// =====================================================
 function getValue(row, key) {
   const target = key.normalize("NFC");
   for (const k in row) {
-    if (k.normalize("NFC") === target) return row[k];
+    if (k.normalize("NFC") === target) {
+      return row[k];
+    }
   }
   return null;
 }
 
-// ===== Load Excel =====
+// =====================================================
+// Tự động đọc file Excel khi trang vừa load
+// =====================================================
 window.onload = () => {
-  fetch("input.xlsx")
+  fetch('input.xlsx')
     .then(res => res.arrayBuffer())
     .then(data => {
-      const wb = XLSX.read(data, { type: "array" });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sheet);
 
-      window.rawRows = rows;
+      window.rawRows = json;
 
-      const rootIDs = rows
+      // Tạo dropdown chọn ID gốc (Đinh x)
+      const rootIDs = json
         .filter(r => r["Đinh"] === "x")
-        .map(r => String(r.ID));
+        .map(r => String(r.ID).replace('.0', ''));
 
       const select = document.createElement("select");
       select.id = "rootSelector";
+      select.style.marginBottom = "10px";
 
       rootIDs.forEach(id => {
-        const r = rows.find(p => String(p.ID) === id);
+        const r = json.find(p => String(p.ID).replace('.0', '') === id);
+        if (!r) return;
         const opt = document.createElement("option");
         opt.value = id;
         opt.text = `${r["Họ và tên"]} (Đời ${r["Đời"] || "-"})`;
         select.appendChild(opt);
       });
 
-      document.body.insertBefore(select, document.getElementById("tree-container"));
-
-      select.onchange = redraw;
-      document.getElementById("showGirls").onchange = redraw;
-
-      redraw();
-
-      function redraw() {
-        const rootID = select.value;
+      // Thêm sự kiện chọn ID
+      select.onchange = () => {
+        const selectedID = select.value;
         const includeGirls = document.getElementById("showGirls").checked;
-        const treeData = convertToSubTree(rows, rootID, includeGirls);
-
+        const rootTree = convertToSubTree(json, selectedID, includeGirls);
         document.getElementById("tree-container").innerHTML = "";
-        drawTree(treeData);
-      }
+        drawTree(rootTree);
+      };
+
+      // Thêm vào DOM
+      document.body.insertBefore(
+        select,
+        document.getElementById("tree-container")
+      );
+
+      // Sự kiện tick "Cả Nam & Nữ"
+      document.getElementById("showGirls").onchange = () => {
+        const selectedID = document.getElementById("rootSelector").value;
+        const includeGirls = document.getElementById("showGirls").checked;
+        const rootTree = convertToSubTree(json, selectedID, includeGirls);
+        document.getElementById("tree-container").innerHTML = "";
+        drawTree(rootTree);
+      };
+
+      // Vẽ cây mặc định
+      const defaultRoot = rootIDs[0];
+      const treeData = convertToSubTree(json, defaultRoot, false);
+      drawTree(treeData);
+    })
+    .catch(err => {
+      console.error("Không thể đọc file Excel:", err);
     });
 };
 
-// ===== Convert dữ liệu =====
-function convertToSubTree(rows, rootID, includeGirls) {
+// =====================================================
+// Duyệt cây con từ ID gốc (LOGIC GỐC – KHÔNG ĐỔI)
+// =====================================================
+function convertToSubTree(rows, rootID, includeGirls = false) {
   const people = {};
-  const valid = new Set();
+  const validIDs = new Set();
 
-  rows.forEach(r => {
-    const id = String(r.ID);
+  rows.forEach(row => {
+    const id = String(row.ID).replace('.0', '');
     people[id] = {
       id,
-      name: r["Họ và tên"] || "",
-      father: getValue(r, "ID cha") ? String(getValue(r, "ID cha")) : null,
-      mother: getValue(r, "ID mẹ") ? String(getValue(r, "ID mẹ")) : null,
-      dinh: r["Đinh"] || "",
+      name: row["Họ và tên"] || "",
+      birth: row["Năm sinh"] || "",
+      death: row["Năm mất"] || "",
+      info: row["Thông tin chi tiết"] || "",
+      father: getValue(row, "ID cha")
+        ? String(getValue(row, "ID cha")).replace('.0', '')
+        : null,
+      mother: getValue(row, "ID mẹ")
+        ? String(getValue(row, "ID mẹ")).replace('.0', '')
+        : null,
+      spouse: row["ID chồng"]
+        ? String(row["ID chồng"]).replace('.0', '')
+        : null,
+      doi: row["Đời"] || "",
+      dinh: row["Đinh"] || "",
       children: []
     };
   });
 
-  function collect(id) {
+  function collectDescendants(id) {
     if (!people[id]) return;
-    if (includeGirls || people[id].dinh === "x") valid.add(id);
+
+    if (includeGirls || people[id].dinh === "x") {
+      validIDs.add(id);
+    }
 
     rows.forEach(r => {
-      const cid = String(r.ID);
-      const fid = getValue(r, "ID cha") ? String(getValue(r, "ID cha")) : null;
-      if (fid === id) collect(cid);
+      const childID = String(r.ID).replace('.0', '');
+      const fatherID = getValue(r, "ID cha")
+        ? String(getValue(r, "ID cha")).replace('.0', '')
+        : null;
+
+      if (fatherID === id) {
+        if (includeGirls || r["Đinh"] === "x") {
+          collectDescendants(childID);
+        }
+      }
     });
   }
 
-  collect(rootID);
+  collectDescendants(rootID);
 
-  valid.forEach(id => {
-    const p = people[id];
-    if (p.father && valid.has(p.father)) {
-      people[p.father].children.push(p);
+  // Nếu tick "Cả Nam & Nữ" → thêm vợ của các thành viên nam
+  if (includeGirls) {
+    const extraSpouses = rows.filter(r => {
+      const idChong = r["ID chồng"]
+        ? String(r["ID chồng"]).replace('.0', '')
+        : "";
+      return validIDs.has(idChong);
+    });
+
+    extraSpouses.forEach(r => {
+      const id = String(r.ID).replace('.0', '');
+      validIDs.add(id);
+    });
+  }
+
+  const treePeople = {};
+  validIDs.forEach(id => {
+    if (people[id]) treePeople[id] = people[id];
+  });
+
+  Object.values(treePeople).forEach(p => {
+    if (p.father && treePeople[p.father]) {
+      treePeople[p.father].children.push(p);
     }
   });
 
-  return people[rootID];
-}
-
-// ===== Vẽ tree =====
-function drawTree(data) {
-  const root = d3.hierarchy(data);
-  window.treeRoot = root;
-
-  const nodeWidth = 120;
-  const nodeHeight = 200;
-
-  d3.tree().nodeSize([nodeWidth, nodeHeight])(root);
-
-  const nodes = root.descendants();
-  const minX = d3.min(nodes, d => d.x);
-  const maxX = d3.max(nodes, d => d.x);
-  const maxY = d3.max(nodes, d => d.y);
-
-  const svg = d3
-    .select("#tree-container")
-    .append("svg")
-    .attr("width", maxX - minX + 200)
-    .attr("height", maxY + 300);
-
-  const g = svg
-    .append("g")
-    .attr("transform", `translate(${100 - minX}, 100)`);
-
-  window.treeGroup = g;
-
-  g.selectAll(".link")
-    .data(root.links())
-    .enter()
-    .append("path")
-    .attr("class", "link")
-    .attr("d", d => {
-      const m = (d.source.y + d.target.y) / 2;
-      return `M${d.source.x},${d.source.y} V${m} H${d.target.x} V${d.target.y}`;
+  Object.values(treePeople).forEach(p => {
+    p.children.sort((a, b) => {
+      const aYear = parseInt(a.birth) || 9999;
+      const bYear = parseInt(b.birth) || 9999;
+      return aYear - bYear;
     });
+  });
 
-  const node = g
-    .selectAll(".node")
-    .data(nodes)
-    .enter()
-    .append("g")
-    .attr("class", d =>
-      d.data.dinh === "x" ? "node dinh-x" : "node dinh-thuong"
-    )
-    .attr("transform", d => `translate(${d.x},${d.y})`);
-
-  node.append("rect")
-    .attr("x", -40)
-    .attr("y", -60)
-    .attr("width", 80)
-    .attr("height", 120)
-    .attr("rx", 10);
-
-  node.append("text")
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
-    .text(d => d.data.name);
-
-  // ===== gọi overlay mẹ =====
-  if (window.drawMotherNodes) {
-    window.drawMotherNodes();
-  }
+  return treePeople[rootID];
 }
