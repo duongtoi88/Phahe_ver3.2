@@ -1,294 +1,157 @@
-// Tự động đọc file Excel khi trang vừa load
-// ===== Helper: đọc cột Excel an toàn với Unicode (ID mẹ, ID cha, ...)
+// ===== Helper đọc cột Excel an toàn Unicode =====
 function getValue(row, key) {
   const target = key.normalize("NFC");
   for (const k in row) {
-    if (k.normalize("NFC") === target) {
-      return row[k];
-    }
+    if (k.normalize("NFC") === target) return row[k];
   }
   return null;
 }
 
+// ===== Load Excel =====
 window.onload = () => {
-  fetch('https://duongtoi88.github.io/Phahe_ver3.2/input.xlsx')
+  fetch("input.xlsx")
     .then(res => res.arrayBuffer())
     .then(data => {
-      const workbook = XLSX.read(data, { type: 'array' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(sheet);
+      const wb = XLSX.read(data, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
 
-      window.rawRows = json;
+      window.rawRows = rows;
 
-      // Tạo dropdown chọn ID gốc (Đinh x)
-      const rootIDs = json.filter(r => r.Đinh === "x").map(r => String(r.ID).replace('.0', ''));
+      const rootIDs = rows
+        .filter(r => r["Đinh"] === "x")
+        .map(r => String(r.ID));
+
       const select = document.createElement("select");
       select.id = "rootSelector";
-      select.style.marginBottom = "10px";
 
       rootIDs.forEach(id => {
-        const r = json.find(p => String(p.ID).replace('.0', '') === id);
+        const r = rows.find(p => String(p.ID) === id);
         const opt = document.createElement("option");
         opt.value = id;
         opt.text = `${r["Họ và tên"]} (Đời ${r["Đời"] || "-"})`;
         select.appendChild(opt);
       });
 
-      // Thêm sự kiện chọn ID
-      select.onchange = () => {
-        const selectedID = select.value;
-        const includeGirls = document.getElementById("showGirls").checked;
-        const rootTree = convertToSubTree(json, selectedID, includeGirls);
-        document.getElementById("tree-container").innerHTML = "";
-        drawTree(rootTree);
-      };
-
-      // Thêm vào DOM
       document.body.insertBefore(select, document.getElementById("tree-container"));
 
-      // Sự kiện tick "Cả Nam & Nữ"
-      document.getElementById("showGirls").onchange = () => {
-        const selectedID = document.getElementById("rootSelector").value;
-        const includeGirls = document.getElementById("showGirls").checked;
-        const rootTree = convertToSubTree(json, selectedID, includeGirls);
-        document.getElementById("tree-container").innerHTML = "";
-        drawTree(rootTree);
-      };
+      select.onchange = redraw;
+      document.getElementById("showGirls").onchange = redraw;
 
-      // Vẽ cây mặc định
-      const defaultRoot = rootIDs[0];
-      const treeData = convertToSubTree(json, defaultRoot, false);
-      drawTree(treeData);
-    })
-    .catch(err => {
-      console.error("Không thể đọc file Excel:", err);
+      redraw();
+
+      function redraw() {
+        const rootID = select.value;
+        const includeGirls = document.getElementById("showGirls").checked;
+        const treeData = convertToSubTree(rows, rootID, includeGirls);
+
+        document.getElementById("tree-container").innerHTML = "";
+        drawTree(treeData);
+      }
     });
 };
 
-// Duyệt cây con từ ID gốc
-function convertToSubTree(rows, rootID, includeGirls = false) {
+// ===== Convert dữ liệu =====
+function convertToSubTree(rows, rootID, includeGirls) {
   const people = {};
-  const validIDs = new Set();
+  const valid = new Set();
 
-  rows.forEach(row => {
-    const id = String(row.ID).replace('.0', '');
+  rows.forEach(r => {
+    const id = String(r.ID);
     people[id] = {
-		  id,
-		  name: row["Họ và tên"] || "",
-		  birth: row["Năm sinh"] || "",
-		  death: row["Năm mất"] || "",
-		  info: row["Thông tin chi tiết"] || "",
-		  father: getValue(row, "ID cha")
-			? String(getValue(row, "ID cha")).replace('.0', '')
-			: null,
-		  mother: getValue(row, "ID mẹ")
-			? String(getValue(row, "ID mẹ")).replace('.0', '')
-			: null,
-		  spouse: getValue(row, "ID chồng")
-			? String(getValue(row, "ID chồng")).replace('.0', '')
-			: null,
-		  doi: row["Đời"] || "",
-		  dinh: row["Đinh"] || "",
-		  children: []
-		};
-
+      id,
+      name: r["Họ và tên"] || "",
+      father: getValue(r, "ID cha") ? String(getValue(r, "ID cha")) : null,
+      mother: getValue(r, "ID mẹ") ? String(getValue(r, "ID mẹ")) : null,
+      dinh: r["Đinh"] || "",
+      children: []
+    };
   });
 
-  function collectDescendants(id) {
+  function collect(id) {
     if (!people[id]) return;
-
-    if (includeGirls || people[id].dinh === "x") {
-      validIDs.add(id);
-    }
+    if (includeGirls || people[id].dinh === "x") valid.add(id);
 
     rows.forEach(r => {
-      const childID = String(r.ID).replace('.0', '');
-      const fatherID = r["ID cha"] ? String(r["ID cha"]).replace('.0', '') : null;
-
-      if (fatherID === id) {
-        if (includeGirls || r["Đinh"] === "x") {
-          collectDescendants(childID);
-        }
-      }
+      const cid = String(r.ID);
+      const fid = getValue(r, "ID cha") ? String(getValue(r, "ID cha")) : null;
+      if (fid === id) collect(cid);
     });
   }
 
-  collectDescendants(rootID);
-// ✅ Nếu tick "Cả Nam & Nữ" → thêm vợ của các thành viên nam
-if (includeGirls) {
-  const extraSpouses = rows.filter(r => {
-    const idChong = String(r["ID chồng"] || "").replace('.0', '');
-    return validIDs.has(idChong); // người chồng đã trong cây
-  });
+  collect(rootID);
 
-  extraSpouses.forEach(r => {
-    const id = String(r.ID).replace('.0', '');
-    validIDs.add(id);
-  });
-}
-
-  const treePeople = {};
-  validIDs.forEach(id => {
-    if (people[id]) treePeople[id] = people[id];
-  });
-
-  Object.values(treePeople).forEach(p => {
-    if (p.father && treePeople[p.father]) {
-      treePeople[p.father].children.push(p);
+  valid.forEach(id => {
+    const p = people[id];
+    if (p.father && valid.has(p.father)) {
+      people[p.father].children.push(p);
     }
   });
 
-  Object.values(treePeople).forEach(p => {
-    p.children.sort((a, b) => {
-      const aYear = parseInt(a.birth) || 9999;
-      const bYear = parseInt(b.birth) || 9999;
-      return aYear - bYear;
-    });
-  });
-
-  return treePeople[rootID];
+  return people[rootID];
 }
 
-// Vẽ cây phả hệ bằng D3.js
+// ===== Vẽ tree =====
 function drawTree(data) {
   const root = d3.hierarchy(data);
-	window.treeRoot = root;
+  window.treeRoot = root;
 
-  // Thiết lập layout dạng cây
   const nodeWidth = 120;
   const nodeHeight = 200;
-  const treeLayout = d3.tree().nodeSize([nodeWidth, nodeHeight]);
-  treeLayout(root);
 
-  // Tính bounding box thực tế
-  const bounds = root.descendants().reduce(
-    (acc, d) => ({
-      x0: Math.min(acc.x0, d.x),
-      x1: Math.max(acc.x1, d.x),
-      y0: Math.min(acc.y0, d.y),
-      y1: Math.max(acc.y1, d.y)
-    }),
-    { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity }
-  );
+  d3.tree().nodeSize([nodeWidth, nodeHeight])(root);
 
-  const dx = bounds.x1 - bounds.x0;
-const dy = bounds.y1 - bounds.y0;
-const marginX = 100;
-const marginY = 100;
-const totalWidth = dx + marginX * 2; // rộng thực sự của cây
+  const nodes = root.descendants();
+  const minX = d3.min(nodes, d => d.x);
+  const maxX = d3.max(nodes, d => d.x);
+  const maxY = d3.max(nodes, d => d.y);
 
-  // Xoá cây cũ
-  d3.select("#tree-container").selectAll("svg").remove();
+  const svg = d3
+    .select("#tree-container")
+    .append("svg")
+    .attr("width", maxX - minX + 200)
+    .attr("height", maxY + 300);
 
-  // Tạo SVG mới
-  const svg = d3.select("#tree-container").append("svg")
-    .attr("width", totalWidth)
-    .attr("height", dy + marginY + 300);
-  
-  const translateX = marginX - bounds.x0;
-  const translateY = marginY - bounds.y0;
-  const g = svg.append("g")
-    .attr("transform", `translate(${translateX}, ${translateY})`);
-	window.treeGroup = g;
+  const g = svg
+    .append("g")
+    .attr("transform", `translate(${100 - minX}, 100)`);
 
+  window.treeGroup = g;
 
-  // Vẽ đường nối
   g.selectAll(".link")
     .data(root.links())
     .enter()
     .append("path")
     .attr("class", "link")
-    .attr("fill", "none")
-    .attr("stroke", "#555")
-    .attr("stroke-width", 2)
     .attr("d", d => {
-      const x1 = d.source.x;
-      const y1 = d.source.y +150;
-      const x2 = d.target.x;
-      const y2 = d.target.y;
-      const midY = (y1 + y2) / 2;
-      return `M ${x1},${y1} V ${midY} H ${x2} V ${y2}`;
+      const m = (d.source.y + d.target.y) / 2;
+      return `M${d.source.x},${d.source.y} V${m} H${d.target.x} V${d.target.y}`;
     });
 
-  // Vẽ các node
-  const node = g.selectAll(".node")
-    .data(root.descendants())
+  const node = g
+    .selectAll(".node")
+    .data(nodes)
     .enter()
     .append("g")
-    .attr("class", "node")
-    .attr("transform", d => `translate(${d.x},${d.y})`)
-    .on("click", (event, d) => openDetailTab(d.data.id))
-    .on("mouseover", (event, d) => showQuickTooltip(event, d.data))
-    .on("mouseout", () => document.getElementById("tooltip").style.display = "none");
+    .attr("class", d =>
+      d.data.dinh === "x" ? "node dinh-x" : "node dinh-thuong"
+    )
+    .attr("transform", d => `translate(${d.x},${d.y})`);
 
   node.append("rect")
     .attr("x", -40)
     .attr("y", -60)
     .attr("width", 80)
     .attr("height", 120)
-    .attr("rx", 10)
-    .attr("ry", 10)
-    .attr("class", d => d.data.dinh === "x" ? "dinh-x" : "dinh-thuong");
+    .attr("rx", 10);
 
   node.append("text")
     .attr("text-anchor", "middle")
-    .attr("transform", "translate(10, 0)")
-    .style("font-size", "12px")
-    .attr("fill", "black")
+    .attr("dominant-baseline", "middle")
     .text(d => d.data.name);
 
-  node.append("text")
-    .attr("text-anchor", "middle")
-    .attr("transform", "translate(-10, 0)")
-    .style("font-size", "12px")
-    .attr("fill", "black")
-    .text(d => (d.data.birth || "") + " - " + (d.data.death || ""));
-  
-  // Cuộn cây sao cho node gốc ra giữa màn hình
-    setTimeout(() => {
-    const container = document.getElementById("tree-container");
-    const svg = container.querySelector("svg");
-    if (!svg) return;
-  
-    const rootNode = d3.select(".node").datum();  // node đầu tiên là gốc
-    const gTransform = d3.select("g").attr("transform");
-    const parts = gTransform.replace("translate(", "").replace(")", "").split(",");
-    const translateX = parseFloat(parts[0]) || 0;
-  
-    const centerX = rootNode.x + translateX;
-    const scrollX = centerX - container.clientWidth / 2;
-    container.scrollLeft = scrollX;
-  }, 50);
-	if (window.drawMotherNodes) {
-	  window.drawMotherNodes();
-	}
-
-}
-
-// Tooltip ngắn khi hover
-function showQuickTooltip(event, data) {
-  const wives = window.rawRows.filter(r => {
-    const idChong = String(r["ID chồng"] || "").replace('.0', '');
-    return idChong === data.id;
-  });
-
-  const children = data.children || [];
-
-  const html = `
-    <div><b>${data.name || "-"}</b> – Đời ${data.doi || "-"}</div>
-    <div>${data.birth || "-"} – ${data.death || "-"}</div>
-    <div><b>Vợ/Chồng:</b> ${wives.length ? wives.map(w => `- ${w["Họ và tên"]}`).join("<br>") : "-"}</div>
-    <div><b>Con:</b> ${children.length ? children.map(c => `- ${c.name}`).join("<br>") : "-"}</div>
-  `;
-
-  const tooltip = document.getElementById("tooltip");
-  tooltip.innerHTML = html;
-  tooltip.style.display = 'block';
-  tooltip.style.left = (event.pageX + 10) + 'px';
-  tooltip.style.top = (event.pageY + 10) + 'px';
-  tooltip.style.textAlign = 'left';
-}
-// Click mở tab chi tiết
-function openDetailTab(id) {
-  window.location.href = `detail.html?id=${id}`;
+  // ===== gọi overlay mẹ =====
+  if (window.drawMotherNodes) {
+    window.drawMotherNodes();
+  }
 }

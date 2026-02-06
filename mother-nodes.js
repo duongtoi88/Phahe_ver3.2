@@ -1,92 +1,75 @@
-// =======================================
-// mother-nodes.js
-// MẸ XOAY DỌC – KHÔNG LINK
-// - Giữ tree cha → con
-// - Mẹ là node hiển thị độc lập
-// - Hỗ trợ nhiều vợ
-// =======================================
-
 (function () {
 
-  window.drawMotherNodes = drawMotherNodes;
-
-  function drawMotherNodes() {
-    if (!window.treeRoot || !window.treeGroup || !window.rawRows) {
-      return;
-    }
+  window.drawMotherNodes = function () {
+    if (!window.treeRoot || !window.treeGroup || !window.rawRows) return;
 
     const g = window.treeGroup;
-    const rows = window.rawRows;
 
-    // map raw rows theo ID
-    const peopleById = {};
-    rows.forEach(r => {
-      const id = String(r.ID).replace('.0', '');
-      peopleById[id] = r;
+    // ===== layer riêng =====
+    let layer = g.select("g.mother-layer");
+    if (!layer.empty()) layer.remove();
+    layer = g.append("g").attr("class", "mother-layer");
+
+    // ===== map raw =====
+    const people = {};
+    window.rawRows.forEach(r => {
+      people[String(r.ID)] = r;
     });
 
-    // map node tree theo ID
+    // ===== map node =====
     const nodeById = {};
     window.treeRoot.descendants().forEach(d => {
       nodeById[d.data.id] = d;
     });
 
-    // gom mẹ theo cha
+    // ===== gom mẹ theo cha =====
     const motherMap = {};
     window.treeRoot.descendants().forEach(d => {
       const fatherId = d.data.id;
-      const children = d.children || [];
-
-      children.forEach(c => {
-        const motherId = c.data.mother;
-        if (!motherId) return;
-
+      (d.children || []).forEach(c => {
+        if (!c.data.mother) return;
         motherMap[fatherId] ??= new Set();
-        motherMap[fatherId].add(motherId);
+        motherMap[fatherId].add(c.data.mother);
       });
     });
 
-    // vẽ node mẹ (xoay dọc)
-    Object.entries(motherMap).forEach(([fatherId, motherSet]) => {
+    // ===== vẽ mẹ (ngoài vùng tree) =====
+    const TREE_NODE_HEIGHT = 200;
+    const offsetY = TREE_NODE_HEIGHT + 40;
+    const spacingX = 120;
+
+    Object.entries(motherMap).forEach(([fatherId, set]) => {
       const fatherNode = nodeById[fatherId];
       if (!fatherNode) return;
 
-      const motherIds = Array.from(motherSet);
-      const spacingX = 110;
-      const offsetY = 100;
+      const ids = Array.from(set);
 
-      motherIds.forEach((motherId, index) => {
-        const mother = peopleById[motherId];
-        if (!mother) return;
+      ids.forEach((mid, i) => {
+        const m = people[mid];
+        if (!m) return;
 
         const x =
           fatherNode.x +
-          (index - (motherIds.length - 1) / 2) * spacingX;
+          (i - (ids.length - 1) / 2) * spacingX;
         const y = fatherNode.y + offsetY;
 
-        // ===== NODE MẸ (XOAY DỌC) =====
-        const mg = g.append("g")
-          .attr("class", "node mother")
-          .attr(
-            "transform",
-            `translate(${x},${y}) rotate(0)`
-          );
+        const mg = layer.append("g")
+          .attr("class", "mother-node")
+          .attr("transform", `translate(${x},${y}) rotate(90)`);
 
         mg.append("rect")
-          .attr("x", -25)
-          .attr("y", -40)
-          .attr("width", 80)
-          .attr("height", 140)
-          .attr("rx", 6)
-          .attr("ry", 6);
+          .attr("x", -70)
+          .attr("y", -22)
+          .attr("width", 140)
+          .attr("height", 44)
+          .attr("rx", 6);
 
         mg.append("text")
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
-          .style("font-size", "12px")
-          .text(mother["Họ và tên"] || "");
+          .text(m["Họ và tên"] || "");
       });
     });
-  }
+  };
 
 })();
