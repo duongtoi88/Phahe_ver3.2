@@ -44,9 +44,6 @@ window.MotherLayer = (function () {
       }
 
       map[motherID].children.push(child);
-
-      // ÉP CON XUỐNG ĐÚNG 2/3 d DƯỚI MẸ
-      child.y = father.y + d;
     });
 
     return map;
@@ -151,3 +148,4 @@ window.MotherLayer = (function () {
   };
 
 })();
+
