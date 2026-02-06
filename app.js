@@ -241,6 +241,9 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
     const scrollX = centerX - container.clientWidth / 2;
     container.scrollLeft = scrollX;
   }, 50);
+	if (window.drawMotherNodes) {
+	  window.drawMotherNodes();
+	}
 
 }
 

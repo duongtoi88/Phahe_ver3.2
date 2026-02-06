@@ -1,72 +1,123 @@
 // =======================================
 // mother-nodes.js
-// VẼ NODE MẸ – KHÔNG ẢNH HƯỞNG TREE
+// VẼ NODE MẸ (OVERLAY)
+// - Giữ nguyên tree cha → con
+// - Hỗ trợ 1 cha – N vợ
+// - Con nối từ ĐÚNG mẹ
 // =======================================
 
 (function () {
-  // chờ app.js vẽ xong
-  setTimeout(drawMotherNodes, 300);
+
+  // expose để app.js gọi lại sau mỗi drawTree()
+  window.drawMotherNodes = drawMotherNodes;
 
   function drawMotherNodes() {
+    // kiểm tra dependency
     if (!window.treeRoot || !window.treeGroup || !window.rawRows) {
       console.warn("Mother nodes: missing dependency");
       return;
     }
 
     const g = window.treeGroup;
-    const people = window.rawRows;
+    const rows = window.rawRows;
 
-    // map dữ liệu theo ID
+    // ==============================
+    // MAP RAW ROWS THEO ID (CHUẨN)
+    // ==============================
     const peopleById = {};
-    people.forEach(p => (peopleById[p.id] = p));
+    rows.forEach(r => {
+      const id = String(r.ID).replace('.0', '');
+      peopleById[id] = r;
+    });
 
-    // map node tree theo ID
+    // ==============================
+    // MAP NODE TREE THEO ID
+    // ==============================
     const nodeById = {};
     window.treeRoot.descendants().forEach(d => {
       nodeById[d.data.id] = d;
     });
 
-    // vẽ node mẹ cho từng node con
-    Object.values(nodeById).forEach(d => {
-      const motherId = d.data.mother;
-      if (!motherId) return;
+    // ==============================
+    // GOM CON THEO (CHA → MẸ)
+    // familyMap[fatherId][motherId] = [childNode, ...]
+    // ==============================
+    const familyMap = {};
 
-      const mother = peopleById[motherId];
-      if (!mother) return;
+    window.treeRoot.descendants().forEach(d => {
+      const fatherId = d.data.id;
+      const children = d.children || [];
 
-      const x = d.x;
-      const y = d.y + 90; // 👈 dưới node bố ~5–10px (tùy chiều cao node)
+      children.forEach(c => {
+        const motherId = c.data.mother;
+        if (!motherId) return;
 
-      const mg = g.append("g")
-        .attr("class", "node mother")
-        .attr("transform", `translate(${x},${y})`);
+        familyMap[fatherId] ??= {};
+        familyMap[fatherId][motherId] ??= [];
+        familyMap[fatherId][motherId].push(c);
+      });
+    });
 
-      // rect mẹ
-      mg.append("rect")
-        .attr("x", -40)
-        .attr("y", -25)
-        .attr("width", 80)
-        .attr("height", 40)
-        .attr("rx", 6)
-        .attr("ry", 6)
-        .attr("fill", "#ffe6ee")
-        .attr("stroke", "#c2185b");
+    // ==============================
+    // VẼ NODE MẸ (XẾP NGANG)
+    // ==============================
+    Object.entries(familyMap).forEach(([fatherId, wives]) => {
+      const fatherNode = nodeById[fatherId];
+      if (!fatherNode) return;
 
-      // text mẹ
-      mg.append("text")
-        .attr("text-anchor", "middle")
-        .attr("dominant-baseline", "middle")
-        .style("font-size", "12px")
-        .text(mother.name || "");
+      const wifeIds = Object.keys(wives);
+      const spacingX = 100;   // khoảng cách ngang giữa các vợ
+      const offsetY = 140;    // khoảng cách dọc so với cha
 
-      // link mẹ → con
-      g.append("line")
-        .attr("x1", x)
-        .attr("y1", y - 25)
-        .attr("x2", d.x)
-        .attr("y2", d.y)
-        .attr("stroke", "#c2185b")
-        .attr("stroke-width", 1.2);
+      wifeIds.forEach((motherId, index) => {
+        const mother = peopleById[motherId];
+        if (!mother) return;
+
+        // căn giữa nhiều vợ
+        const x =
+          fatherNode.x +
+          (index - (wifeIds.length - 1) / 2) * spacingX;
+        const y = fatherNode.y + offsetY;
+
+        // ===== NODE MẸ =====
+        const mg = g.append("g")
+          .attr("class", "node mother")
+          .attr("transform", `translate(${x},${y})`);
+
+        mg.append("rect")
+          .attr("x", -40)
+          .attr("y", -25)
+          .attr("width", 80)
+          .attr("height", 50)
+          .attr("rx", 6)
+          .attr("ry", 6)
+          .attr("fill", "#ffe6ee")
+          .attr("stroke", "#c2185b")
+          .attr("stroke-width", 1.5);
+
+        mg.append("text")
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .style("font-size", "12px")
+          .text(mother["Họ và tên"] || "");
+
+        // ===== LINK MẸ → CON =====
+        wives[motherId].forEach(childNode => {
+          g.append("path")
+            .attr("fill", "none")
+            .attr("stroke", "#c2185b")
+            .attr("stroke-width", 1.2)
+            .attr("d", () => {
+              const x1 = x;
+              const y1 = y - 25;
+              const x2 = childNode.x;
+              const y2 = childNode.y;
+              const midY = (y1 + y2) / 2;
+              return `M ${x1},${y1} V ${midY} H ${x2} V ${y2}`;
+            });
+        });
+      });
     });
   }
+
 })();
