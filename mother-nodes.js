@@ -106,8 +106,6 @@ function renderMotherNodes(g, nodes, peopleMap) {
 
 		if (!childNode) return;
 
-      if (!childNode) return;
-
       const childTopY = childNode.y - CHILD_HALF;
       const x = startX + i * spacing;
 
