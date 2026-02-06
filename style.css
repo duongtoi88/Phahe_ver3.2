@@ -1,42 +1,76 @@
+/* =========================
+   RESET CƠ BẢN
+========================= */
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: Arial;
-  text-align: center;
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+  color: #111;
 }
-#tree-container svg {
+
+/* =========================
+   CONTAINER CÂY PHẢ HỆ
+========================= */
+#tree-container {
+  width: 100%;
+  height: calc(100vh - 140px);
+  overflow: auto;
   border: 1px solid #ccc;
-  margin-top: 20px;
-}
-/* Màu sắc node đặc biệt theo Đinh */
-.node rect {
-  transition: fill 0.3s ease;
+  background: #fff;
 }
 
-.node rect.dinh-x {
-  fill: #c3e6cb; /* Màu xanh nhạt */
-  stroke: #155724;
-}
-
-.node rect.dinh-thuong {
-  fill: #ffffff; /* Màu trắng */
-  stroke: #0c5460;
-}
-.node text {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  font-size: 12px;
-  dominant-baseline: middle;
-}
+/* =========================
+   LINK (CHA → CON)
+========================= */
 .link {
   fill: none;
-  stroke: #999;
-  stroke-width: 1.5px;
+  stroke: #777;
+  stroke-width: 2;
 }
-.tooltip {
-  position: absolute;
-  background: #fff;
-  border: 1px solid #aaa;
-  padding: 10px;
-  font-size: 14px;
+
+/* =========================
+   NODE CHUNG
+========================= */
+.node {
+  cursor: pointer;
+}
+
+/* KHÔNG BAO GIỜ set rect = đen */
+.node rect {
+  fill: #ffffff;
+  stroke: #333;
+  stroke-width: 1.2;
+}
+
+/* =========================
+   NODE ĐINH (NAM)
+========================= */
+.node.dinh-x rect {
+  fill: #c8e6c9;          /* xanh nhạt */
+  stroke: #2e7d32;
+}
+
+/* =========================
+   NODE THƯỜNG / NỮ
+========================= */
+.node.dinh-thuong rect {
+  fill: #ffffff;
+  stroke: #1565c0;
+}
+
+/* =========================
+   TEXT TRONG NODE
+========================= */
+.node text {
   pointer-events: none;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  user-select: none;
+  fill: #000;
+  font-size: 12px;
+  text-anchor: middle;
 }
+
+/* =============*
