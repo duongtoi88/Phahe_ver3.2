@@ -1,4 +1,4 @@
-// app.js - đầy đủ: robust Excel header mapping, hỗ trợ tải file cục bộ, vẽ bằng D3, zoom/pan, tooltip, centering root
+// app.js - tự động load ./input.xlsx (cùng thư mục), robust header mapping, vẽ bằng D3
 (function () {
   // ===== Helper đọc cột Excel an toàn Unicode =====
   function normalizeKey(s) {
@@ -12,7 +12,6 @@
     }
     return null;
   }
-  // Trả giá trị từ row thử nhiều tên khác nhau (alias)
   function getAny(row, names) {
     for (const n of names) {
       const v = getValue(row, n);
@@ -45,51 +44,24 @@
     el.textContent = msg;
   }
 
-  // ===== Init UI & event handlers =====
+  // ===== Init =====
   window.addEventListener('DOMContentLoaded', () => {
     initUI();
-
-    const fileInput = $('fileInput');
-    if (fileInput) {
-      fileInput.addEventListener('change', (ev) => {
-        const f = ev.target.files && ev.target.files[0];
-        if (!f) return;
-        showMessage('Đang đọc file Excel từ máy của bạn...');
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          const ab = e.target.result;
-          try {
-            processWorkbookArrayBuffer(ab);
-            showMessage('Đã đọc file cục bộ. Chọn ID gốc để vẽ cây.');
-            redraw();
-          } catch (err) {
-            console.error('Process local file error', err);
-            showMessage('Lỗi khi xử lý file: ' + (err.message || err));
-          }
-        };
-        reader.onerror = function (e) {
-          console.error('FileReader error', e);
-          showMessage('Không thể đọc file: ' + e);
-        };
-        reader.readAsArrayBuffer(f);
-      });
-    }
-
-    // Thử auto-load input.xlsx (nếu có trên server)
-    loadExcel('input.xlsx').catch(err => {
+    // Tự động load input.xlsx trong cùng thư mục
+    loadExcel('./input.xlsx').catch(err => {
       console.warn('Auto load input.xlsx thất bại:', err);
-      showMessage('Không tự động tìm thấy input.xlsx trên server. Vui lòng tải file Excel bằng ô "Tải file Excel" phía trên.');
+      showMessage('Không tìm thấy hoặc không thể đọc ./input.xlsx. Hãy đảm bảo file nằm cùng thư mục với index.html và mở trang qua HTTP (local server) nếu dùng cục bộ.');
     });
   });
 
-  // ===== Load Excel từ URL =====
+  // ===== Load Excel từ URL tương đối =====
   async function loadExcel(url) {
-    showMessage('Đang tải và đọc file Excel từ server: ' + url);
+    showMessage('Đang tải và đọc file Excel: ' + url);
     let res;
     try {
       res = await fetch(url, { cache: 'no-store' });
     } catch (err) {
-      throw new Error('Fetch lỗi: ' + err.message);
+      throw new Error('Fetch lỗi: ' + err.message + '. Nếu bạn mở bằng file://, vui lòng dùng local server.');
     }
     if (!res.ok) {
       throw new Error('Fetch thất bại: ' + res.status + ' ' + res.statusText);
@@ -98,42 +70,41 @@
     processWorkbookArrayBuffer(data);
   }
 
-  // ===== Xử lý ArrayBuffer workbook (dùng chung cho local & fetch) =====
+  // ===== Xử lý workbook =====
   function processWorkbookArrayBuffer(arrayBuffer) {
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
-    // DEBUG: log kích thước & một sample header để biết SheetJS đọc gì
     console.info('SheetJS: rows read =', rows.length);
     if (rows.length > 0) {
       console.info('SheetJS: sample row keys =', Object.keys(rows[0]));
       showMessage('Đã đọc ' + rows.length + ' hàng. (Xem console để biết tên cột thực tế.)');
     } else {
-      showMessage('File rỗng hoặc không tìm thấy hàng. Vui lòng kiểm tra file input.xlsx hoặc upload file cục bộ.');
+      showMessage('File rỗng hoặc không tìm thấy hàng. Vui lòng kiểm tra file input.xlsx.');
     }
     state.rows = rows;
     buildMaps(rows);
     buildRootSelector();
+    // tự động redraw nếu có root được chọn
+    if (state.currentRootID) redraw();
   }
 
-  // ===== Build maps robust (không phụ thuộc chính xác tên cột) =====
+  // ===== Build maps robust =====
   function buildMaps(rows) {
     state.people = {};
     state.childrenMap = {};
     state.rootIDs = [];
 
-    // Các alias khả dĩ cho từng trường
     const ID_KEYS = ['ID', 'Id', 'id'];
-    const NAME_KEYS = ['Họ và tên', 'Ho va ten', 'Ho và tên', 'Họ và ten', 'Họ và tên', 'Họ và tên ', 'Name', 'Ten', 'Họ và tên\r\n'];
-    const FATHER_KEYS = ['ID cha', 'ID_cha', 'IDcha', 'ID Cha', 'IDCha', 'ID_cha', 'ID_cha '];
-    const MOTHER_KEYS = ['ID mẹ', 'ID_me', 'IDme', 'ID Mẹ', 'IDMe', 'ID mẹ '];
+    const NAME_KEYS = ['Họ và tên', 'Ho va ten', 'Ho và tên', 'Họ và ten', 'Name', 'Ten'];
+    const FATHER_KEYS = ['ID cha', 'ID_cha', 'IDcha', 'ID Cha', 'IDCha'];
+    const MOTHER_KEYS = ['ID mẹ', 'ID_me', 'IDme', 'ID Mẹ', 'IDMe'];
     const DINH_KEYS = ['Đinh', 'Dinh', 'dinh'];
 
     rows.forEach((r, idx) => {
       if (!r) return;
       const rawId = getAny(r, ID_KEYS);
       if (rawId == null) {
-        // skip nếu không có ID - nhưng log 1 lần để debug
         if (idx < 3) console.warn('buildMaps: row missing ID (sample):', r);
         return;
       }
@@ -193,7 +164,7 @@
     };
   }
 
-  // ===== Build root selector options =====
+  // ===== Build root selector =====
   function buildRootSelector() {
     const select = $('rootSelector');
     select.innerHTML = '';
@@ -219,13 +190,12 @@
       state.currentRootID = select.value;
     } else {
       state.currentRootID = null;
-      // debug: show sample first row keys to help identify header mismatch
       const sample = state.rows[0];
       if (sample) {
         showMessage('Không tìm thấy ID gốc. Tên cột trong file có thể khác. Sample columns: ' + Object.keys(sample).join(', '));
         console.warn('buildRootSelector: sample row keys =', Object.keys(sample));
       } else {
-        showMessage('Không có dữ liệu. Vui lòng upload input.xlsx hoặc chọn file cục bộ.');
+        showMessage('Không có dữ liệu. Vui lòng đảm bảo input.xlsx tồn tại trong cùng thư mục.');
       }
     }
   }
@@ -241,20 +211,13 @@
       if (!p) continue;
       valid.add(id);
       const children = state.childrenMap[id] || [];
-      for (const cid of children) {
-        stack.push(cid);
-      }
+      for (const cid of children) stack.push(cid);
     }
 
     function buildNode(id) {
       const p = state.people[id];
       if (!p) return null;
-      const node = {
-        id: p.id,
-        name: p.name,
-        dinh: p.dinh,
-        children: []
-      };
+      const node = { id: p.id, name: p.name, dinh: p.dinh, children: [] };
       const childs = state.childrenMap[id] || [];
       for (const cid of childs) {
         if (valid.has(cid)) {
@@ -277,7 +240,7 @@
     if (!container) return;
     container.innerHTML = '';
     if (!treeData) {
-      showMessage('Không có dữ liệu cho ID gốc đã chọn. Vui lòng upload input.xlsx hoặc chọn file cục bộ.');
+      showMessage('Không có dữ liệu cho ID gốc đã chọn. Vui lòng kiểm tra input.xlsx.');
       return;
     }
     showMessage('');
@@ -285,14 +248,9 @@
   }
 
   function drawTree(data) {
-    // constants / sizing
-    const NODE_W = 110;
-    const NODE_H = 80;
-    const H_SPACING = 160;
-    const V_SPACING = 200;
+    const NODE_W = 110, NODE_H = 80, H_SPACING = 160, V_SPACING = 200;
     const margin = { top: 40, right: 60, bottom: 120, left: 60 };
 
-    // create hierarchy & layout
     const root = d3.hierarchy(data, d => d.children);
     const treeLayout = d3.tree().nodeSize([H_SPACING, V_SPACING]);
     treeLayout(root);
@@ -314,62 +272,32 @@
       .attr('preserveAspectRatio', 'xMidYMid meet')
       .style('background', 'transparent');
 
-    // add zoom / pan
-    const g = svg.append('g')
-      .attr('class', 'tree-layer')
-      .attr('transform', `translate(0,${20})`);
+    const g = svg.append('g').attr('class', 'tree-layer').attr('transform', `translate(0,${20})`);
 
-    const zoom = d3.zoom()
-      .scaleExtent([0.2, 3])
-      .on('zoom', (event) => {
-        g.attr('transform', event.transform);
-      });
-
+    const zoom = d3.zoom().scaleExtent([0.2, 3]).on('zoom', (event) => { g.attr('transform', event.transform); });
     svg.call(zoom);
 
-    // links
-    g.selectAll('.link')
-      .data(root.links())
-      .join('path')
+    g.selectAll('.link').data(root.links()).join('path')
       .attr('class', 'link')
       .attr('d', d => {
-        // Manhattan connector like original but smoother with cubic curve
-        const sx = d.source.x;
-        const sy = d.source.y;
-        const tx = d.target.x;
-        const ty = d.target.y;
-        const mx = (sx + tx) / 2;
+        const sx = d.source.x, sy = d.source.y, tx = d.target.x, ty = d.target.y, mx = (sx + tx) / 2;
         return `M${sx},${sy} C${mx},${sy} ${mx},${ty} ${tx},${ty}`;
       })
-      .attr('fill', 'none')
-      .attr('stroke', '#777')
-      .attr('stroke-width', 2);
+      .attr('fill', 'none').attr('stroke', '#777').attr('stroke-width', 2);
 
-    // nodes
-    const node = g.selectAll('.node')
-      .data(nodes, d => d.data.id)
-      .join('g')
+    const node = g.selectAll('.node').data(nodes, d => d.data.id).join('g')
       .attr('class', d => d.data.dinh === 'x' ? 'node dinh-x' : 'node dinh-thuong')
       .attr('transform', d => `translate(${d.x},${d.y})`)
       .style('cursor', 'pointer');
 
-    node.append('rect')
-      .attr('x', -NODE_W / 2)
-      .attr('y', -NODE_H / 2)
-      .attr('width', NODE_W)
-      .attr('height', NODE_H)
-      .attr('rx', 8)
-      .attr('fill', '#fff')
-      .attr('stroke', '#333');
+    node.append('rect').attr('x', -NODE_W / 2).attr('y', -NODE_H / 2)
+      .attr('width', NODE_W).attr('height', NODE_H).attr('rx', 8)
+      .attr('fill', '#fff').attr('stroke', '#333');
 
-    node.append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'middle')
-      .style('pointer-events', 'none')
-      .style('font-size', '12px')
+    node.append('text').attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+      .style('pointer-events', 'none').style('font-size', '12px')
       .text(d => d.data.name || ('ID ' + d.data.id));
 
-    // tooltip element (single shared div in DOM)
     let tooltip = document.getElementById('tooltip');
     if (!tooltip) {
       tooltip = document.createElement('div');
@@ -377,7 +305,6 @@
       document.body.appendChild(tooltip);
     }
 
-    // events: hover, click to focus
     node.on('mouseenter', (event, d) => {
       tooltip.style.display = 'block';
       tooltip.innerHTML = `<b>${d.data.name || ''}</b><br/>ID: ${d.data.id}<br/>Đinh: ${d.data.dinh || '-'}`;
@@ -389,14 +316,10 @@
     }).on('mouseleave', () => {
       tooltip.style.display = 'none';
     }).on('click', (event, d) => {
-      // center clicked node: compute transform to center node in viewport
       const svgNode = svg.node();
       const svgRect = svgNode.getBoundingClientRect();
-      const cx = svgRect.width / 2;
-      const cy = svgRect.height / 3;
-      const x = d.x;
-      const y = d.y;
-      // current transform
+      const cx = svgRect.width / 2, cy = svgRect.height / 3;
+      const x = d.x, y = d.y;
       const t = d3.zoomTransform(svgNode);
       const scale = t.k;
       const translateX = cx - x * scale;
@@ -404,10 +327,8 @@
       svg.transition().duration(700).call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(scale));
     });
 
-    // expose for mother nodes rendering
     window._currentDraw = { root, group: g, rows: state.rows, nodeById: Object.fromEntries(nodes.map(n => [n.data.id, n])) };
 
-    // call mother-nodes renderer if present
     if (typeof window.drawMotherNodes === 'function') {
       try {
         window.drawMotherNodes(root, g, state.rows, window._currentDraw.nodeById);
@@ -416,16 +337,14 @@
       }
     }
 
-    // Tự động căn giữa node gốc sau khi vẽ (an toàn, dùng d3.zoom)
+    // Center root safely
     try {
       const rootNode = nodes.find(n => n.depth === 0) || nodes[0];
       if (rootNode) {
         const svgNode = svg.node();
         const svgRect = svgNode.getBoundingClientRect();
-        const cx = svgRect.width / 2;
-        const cy = svgRect.height / 3;
-        const x = rootNode.x;
-        const y = rootNode.y;
+        const cx = svgRect.width / 2, cy = svgRect.height / 3;
+        const x = rootNode.x, y = rootNode.y;
         const t = d3.zoomTransform(svgNode);
         const scale = t.k || 1;
         const translateX = cx - x * scale;
@@ -437,10 +356,5 @@
     }
   }
 
-  // Expose minimal API for debugging (optional)
-  window._familyApp = {
-    state,
-    redraw,
-  };
-
+  window._familyApp = { state, redraw };
 })();
