@@ -2,7 +2,7 @@
 // Version 3.2 – Render mother nodes (không ảnh hưởng tree chính)
 
 /**
- * Vẽ node MẸ cạnh node CHA
+ * Vẽ node me cạnh node CHA
  * @param {d3.Selection} g - group SVG gốc
  * @param {Array} nodes - root.descendants()
  * @param {Object} peopleMap - map people từ app.js
@@ -43,3 +43,4 @@ function renderMotherNodes(g, nodes, peopleMap) {
     .style("font-size", "11px")
     .text(d => d.mother.name);
 }
+
