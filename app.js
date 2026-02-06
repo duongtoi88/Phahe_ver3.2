@@ -140,36 +140,40 @@ function drawTree(data) {
   const nodeHeight = 200;
   const treeLayout = d3.tree().nodeSize([nodeWidth, nodeHeight]);
   treeLayout(root);
-	  function computeMotherPositions(root) {
+	function computeMotherPositions(root) {
 	  const motherMap = {};
-
-	  root.descendants().forEach(d => {
-		const motherID = d.data.mother;
-		if (!motherID) return;
-
-		if (!motherMap[motherID]) {
-		  motherMap[motherID] = {
-			id: motherID,
-			children: [],
-			x: d.x,
-			y: d.y
-		  };
-		}
-		motherMap[motherID].children.push(d);
+	
+	  root.descendants().forEach(child => {
+	    const motherID = child.data.mother;
+	    if (!motherID) return;
+	
+	    const father = child.parent;
+	    if (!father) return;
+	
+	    if (!motherMap[motherID]) {
+	      motherMap[motherID] = {
+	        id: motherID,
+	        children: [],
+	        father: father,
+	        x: 0,
+	        y: 0
+	      };
+	    }
+	    motherMap[motherID].children.push(child);
 	  });
-
+	
 	  Object.values(motherMap).forEach(m => {
-		// mẹ nằm giữa các con
-		const avgX = d3.mean(m.children, c => c.x);
-		const minY = d3.min(m.children, c => c.y);
-
-		m.x = avgX;
-		m.y = minY - nodeHeight * 0.66; // mẹ nằm giữa cha & con
+	    const avgChildX = d3.mean(m.children, c => c.x);
+	    const fatherY = m.father.y;
+	    const childY = d3.min(m.children, c => c.y);
+	
+	    // mẹ nằm giữa cha & con
+	    m.x = avgChildX;
+	    m.y = fatherY + (childY - fatherY) / 3;
 	  });
-
+	
 	  return motherMap;
 	}
-
 
   // Tính bounding box thực tế
   const bounds = root.descendants().reduce(
@@ -351,3 +355,4 @@ function showQuickTooltip(event, data) {
 function openDetailTab(id) {
   window.location.href = `detail.html?id=${id}`;
 }
+
