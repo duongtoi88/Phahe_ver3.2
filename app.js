@@ -172,22 +172,22 @@ const totalWidth = dx + marginX * 2; // rộng thực sự của cây
     .attr("transform", `translate(${translateX}, ${translateY})`);
 
   // Vẽ đường nối
-  g.selectAll(".link")
-    .data(root.links())
-    .enter()
-    .append("path")
-    .attr("class", "link")
-    .attr("fill", "none")
-    .attr("stroke", "transparent")
-    .attr("stroke-width", 0)
-    .attr("d", d => {
-      const x1 = d.source.x;
-      const y1 = d.source.y;
-      const x2 = d.target.x;
-      const y2 = d.target.y;
-      const midY = (y1 + y2) / 2;
-      return `M ${x1},${y1} V ${midY} H ${x2} V ${y2}`;
-    });
+ // g.selectAll(".link")
+   // .data(root.links())
+    //.enter()
+    //.append("path")
+    //.attr("class", "link")
+   // .attr("fill", "none")
+   // .attr("stroke", "transparent")
+   // .attr("stroke-width", 0)
+   // .attr("d", d => {
+   //   const x1 = d.source.x;
+   //   const y1 = d.source.y;
+   //   const x2 = d.target.x;
+   //   const y2 = d.target.y;
+   //   const midY = (y1 + y2) / 2;
+   //   return `M ${x1},${y1} V ${midY} H ${x2} V ${y2}`;
+   // });
 
   // Vẽ các node
   const node = g.selectAll(".node")
@@ -268,3 +268,4 @@ function showQuickTooltip(event, data) {
 function openDetailTab(id) {
   window.location.href = `detail.html?id=${id}`;
 }
+
