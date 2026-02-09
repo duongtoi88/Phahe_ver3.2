@@ -182,7 +182,7 @@ window.MotherLayer = (function () {
 	  enter.append("text")
 	    .attr("text-anchor", "middle")
 	    .attr("dominant-baseline", "middle")
-	    .text(d => d.name);
+	    .text(d => d.name||d.ID);
 	
 	  group.exit().remove();
 	}
@@ -193,6 +193,7 @@ window.MotherLayer = (function () {
   };
 
 })();
+
 
 
 
