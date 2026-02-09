@@ -176,11 +176,18 @@ function drawMotherLinks(g, mothers, d) {
 	    .attr("ry", 10)
 	    .attr("fill", "#ffe5e5")
 	    .attr("stroke", "#ff6666");
-	
-		enter.append("text")
-		  .attr("text-anchor", "middle")
-		  .attr("dominant-baseline", "middle")
-		  .text(d => d.name);
+	  
+	 nodes.append("text")
+	      .attr("text-anchor", "middle")
+	      .attr("dy", "0.35em")
+	      .style("font-size", "11px")
+	      .text(m => {
+	        if (!window.rawRows) return "";
+	        const p = window.rawRows.find(r =>
+	          String(r.ID).replace(".0", "") === m.id
+	        );
+	        return p ? p["Họ và tên"] : "";
+	      });
 	
 	  group.exit().remove();
 	}
@@ -191,6 +198,7 @@ function drawMotherLinks(g, mothers, d) {
   };
 
 })();
+
 
 
 
