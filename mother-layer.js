@@ -86,15 +86,23 @@ window.MotherLayer = (function () {
 	    const f = m.father;
 	
 	    /* ========= CHA → MẸ (1/3 d) ========= */
-	    g.append("path")
-	      .attr("class", "link link-father-mother")
-	      .attr("fill", "none")
-	      .attr("stroke", "#555")
-	      .attr("stroke-width", 2)
-	      .attr("d", `
-	        M ${f.x},${f.y + NODE_HALF_H}
-	        V ${m.y - NODE_HALF_H}
-	      `);
+	   // mother-layer v1.3.3
+		const fatherBottomY = f.y + NODE_HALF_H;
+		const motherTopY   = m.y - NODE_HALF_H;
+		const midY = fatherBottomY + (motherTopY - fatherBottomY) / 2;
+		
+		g.append("path")
+		  .attr("class", "link link-father-mother")
+		  .attr("fill", "none")
+		  .attr("stroke", "#555")
+		  .attr("stroke-width", 2)
+		  .attr("d", `
+		    M ${f.x},${fatherBottomY}
+		    V ${midY}
+		    H ${m.x}
+		    V ${motherTopY}
+		  `);
+
 	
 	    /* ======= KHÔNG CÓ CON → DỪNG ======= */
 	    if (!m.children || m.children.length === 0) return;
@@ -185,6 +193,7 @@ window.MotherLayer = (function () {
   };
 
 })();
+
 
 
 
