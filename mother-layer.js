@@ -17,6 +17,7 @@ const MotherLayer = (() => {
   // =========================
   function render(root, g, d) {
     const mothers = collectMothers(root, d);
+    console.log("MOTHERS:", mothers); // 👈 LOG ĐÚNG CHỖ
     layoutMultipleWives(mothers);     // 👈 nhiều vợ (GIỮ LOGIC CŨ)
     drawMotherLinks(g, mothers, d);
     drawMotherNodes(g, mothers);
@@ -195,3 +196,4 @@ const MotherLayer = (() => {
   };
 
 })();
+
