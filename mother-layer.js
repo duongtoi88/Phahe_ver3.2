@@ -1,72 +1,64 @@
-// ======================================================
-// mother-layer.js
-// Version: 1.1.0-stable-multi-wife
-// ======================================================
+/**
+ * MotherLayer – FINAL CLEAN VERSION
+ *
+ * Quy ước:
+ * - d = nodeHeight = khoảng cách CHA → CON
+ * - Mẹ nằm tại 1/3 d
+ * - Con nằm tại d (2/3 d dưới mẹ)
+ * - Đường nối BẮT BUỘC gấp khúc
+ * - Không phá tree, không sửa index/app
+ */
 
-const MotherLayer = (() => {
+window.MotherLayer = (function () {
 
-  // =========================
-  // CONFIG
-  // =========================
-  const NODE_WIDTH  = 80;
-  const NODE_HEIGHT = 60;
-  const NODE_HALF_H = NODE_HEIGHT / 2;
-
-  // =========================
-  // MAIN ENTRY
-  // =========================
   function render(root, g, d) {
+    if (!root || !g || !d) return;
+
     const mothers = collectMothers(root, d);
-    console.log("MOTHERS:", mothers); // 👈 LOG ĐÚNG CHỖ
-    layoutMultipleWives(mothers);     // 👈 nhiều vợ (GIỮ LOGIC CŨ)
-    drawMotherLinks(g, mothers, d);
+    layoutMultipleWives(mothers);
+    drawMotherLinks(g, mothers,d);
     drawMotherNodes(g, mothers);
   }
 
-  // =========================
-  // COLLECT MOTHERS (MATCH EXCEL)
-  // =========================
+  // --------------------------------------------------
+  // Thu thập mẹ + ép lại tầng (CHUẨN 1/3 – 2/3)
+  // --------------------------------------------------
   function collectMothers(root, d) {
-    const map = {};
-    const allNodes = root.descendants();
-  
-    allNodes.forEach(child => {
-      const fatherID = child.data["ID cha"];
-      if (!fatherID) return;
-  
-      const father = allNodes.find(n => n.data.ID === fatherID);
-      if (!father) return;
-  
-      const motherID = child.data["ID me"];
-      if (!motherID) return; // chỉ không tạo mẹ, KHÔNG bỏ con
-  
-      const motherNode = allNodes.find(n => n.data.ID === motherID);
-  
-      if (!map[motherID]) {
-        map[motherID] = {
-          id: motherID,
-          name: motherNode ? motherNode.data["Họ và tên"] : String(motherID),
-          father,
-          children: [],
-          x: father.x,
-          y: father.y + d / 3
-        };
-      }
-  
-      map[motherID].children.push(child);
-    });
-  
-    return map;
-  }
+	  const map = {};
+	  const allNodes = root.descendants();
+	
+	  allNodes.forEach(child => {
+	    const motherID = child.data.mother;
+	    const fatherID = child.data.father;
+	    if (!motherID || !fatherID) return;
+	
+	    const father = allNodes.find(n => n.data.id === fatherID);
+	    if (!father) return;
+	
+	    if (!map[motherID]) {
+	      map[motherID] = {
+	        id: motherID,
+	        father,
+	        children: [],
+	        x: father.x,
+	        y: father.y + d / 3
+	      };
+	    }
+	
+	    map[motherID].children.push(child);
+	  });
+	
+	  return map;
+	}
 
-  // =========================
-  // MULTI-WIFE LAYOUT (GIỮ TINH THẦN CODE CŨ)
-  // =========================
+  // --------------------------------------------------
+  // Nhiều vợ → cùng 1 hàng ngang
+  // --------------------------------------------------
   function layoutMultipleWives(mothers) {
     const byFather = {};
 
     Object.values(mothers).forEach(m => {
-      const fid = m.father.data.ID;
+      const fid = m.father.data.id;
       if (!byFather[fid]) byFather[fid] = [];
       byFather[fid].push(m);
     });
@@ -75,128 +67,124 @@ const MotherLayer = (() => {
       if (wives.length <= 1) return;
 
       const spacing = 120;
-      const baseX = wives[0].father.x;
-
       wives.forEach((m, i) => {
-        m.x = baseX + (i - (wives.length - 1) / 2) * spacing;
-        // ❌ KHÔNG sửa m.y (tránh loạn đường)
+        m.x = m.father.x + (i - (wives.length - 1) / 2) * spacing;
+		m.y += i * 5; // vợ sau thấp hơn vợ trước 5px
       });
     });
   }
 
-  // =========================
-  // DRAW LINKS
-  // =========================
-  function drawMotherLinks(g, mothers, d) {
+  // --------------------------------------------------
+  // Vẽ đường nối GẤP KHÚC – ĐÚNG TỌA ĐỘ THẬT
+  // --------------------------------------------------
+  function drawMotherLinks(g, mothers,d) {
     Object.values(mothers).forEach(m => {
       const f = m.father;
 
-      // ===== CHA → MẸ (GẤP KHÚC) =====
-      const fatherBottomY = f.y + NODE_HALF_H;
-      const motherTopY   = m.y - NODE_HALF_H;
-      const midY = fatherBottomY + (motherTopY - fatherBottomY) / 2;
+      // CHA → MẸ (1/3 d)
+		g.append("path")
+		  .attr("class", "link link-father-mother")
+		  .attr("fill", "none")
+		  .attr("stroke", "#555")
+		  .attr("stroke-width", 2)
+		  .attr("d", `
+		    M ${f.x},${f.y + 60}
+		    V ${m.y - 60}
+		  `);
 
-      g.append("path")
-        .attr("class", "link father-mother")
-        .attr("fill", "none")
-        .attr("stroke", "#555")
-        .attr("stroke-width", 2)
-        .attr("d", `
-          M ${f.x},${fatherBottomY}
-          V ${midY}
-          H ${m.x}
-          V ${motherTopY}
-        `);
+      // MẸ → CON (2/3 d)
+    // ===== MẸ → CÁC CON (VẼ 1 TRỤC CHUNG) =====
+		if (m.children.length > 0) {
+		  const children = m.children;
+		if (!Number.isFinite(d)) return;
+		  const yBranch = m.y + (d * 2 / 3) / 2;
+		  const minX = Math.min(...children.map(c => c.x));
+		  const maxX = Math.max(...children.map(c => c.x));
 
-      // ===== KHÔNG CÓ CON =====
-      if (!m.children || m.children.length === 0) return;
+		  // 1️⃣ Trục dọc từ mẹ xuống đường ngang
+		  g.append("path")
+			.attr("class", "link link-mother-branch")
+			.attr("fill", "none")
+			.attr("stroke", "#555")
+			.attr("stroke-width", 2)
+			.attr("d", `
+			  M ${m.x},${m.y + 60}
+			  V ${yBranch-10}
+			`);
 
-      const children = m.children;
+		  // 2️⃣ Đường ngang CHUNG nối các con
+		  g.append("path")
+			.attr("class", "link link-children-horizontal")
+			.attr("fill", "none")
+			.attr("stroke", "#555")
+			.attr("stroke-width", 2)
+			.attr("d", `
+			  M ${minX},${yBranch}
+			  H ${maxX}
+			`);
 
-      // ===== TRỤC CHUNG =====
-      const yJoint = m.y + d / 3;
-
-      const xs = [m.x, ...children.map(c => c.x)];
-      const minX = Math.min(...xs);
-      const maxX = Math.max(...xs);
-
-      // ===== MẸ → TRỤC =====
-      g.append("path")
-        .attr("class", "link mother-branch")
-        .attr("fill", "none")
-        .attr("stroke", "#555")
-        .attr("stroke-width", 2)
-        .attr("d", `
-          M ${m.x},${m.y + NODE_HALF_H}
-          V ${yJoint}
-        `);
-
-      // ===== TRỤC NGANG =====
-      g.append("path")
-        .attr("class", "link children-horizontal")
-        .attr("fill", "none")
-        .attr("stroke", "#555")
-        .attr("stroke-width", 2)
-        .attr("d", `
-          M ${minX},${yJoint}
-          H ${maxX}
-        `);
-
-      // ===== TRỤC → CON =====
-      children.forEach(c => {
-        g.append("path")
-          .attr("class", "link child-vertical")
-          .attr("fill", "none")
-          .attr("stroke", "#555")
-          .attr("stroke-width", 2)
-          .attr("d", `
-            M ${c.x},${yJoint}
-            V ${c.y - NODE_HALF_H}
-          `);
-      });
+		  // 3️⃣ Các nhánh dọc từ đường ngang xuống từng con
+		  children.forEach(c => {
+			g.append("path")
+			  .attr("class", "link link-child-vertical")
+			  .attr("fill", "none")
+			  .attr("stroke", "#555")
+			  .attr("stroke-width", 2)
+			  .attr("d", `
+				M ${c.x},${yBranch}
+				V ${c.y - 60}
+			  `);
+		  });
+		}
     });
   }
 
-  // =========================
-  // DRAW MOTHER NODES
-  // =========================
+  // --------------------------------------------------
+  // Vẽ node mẹ
+  // --------------------------------------------------
   function drawMotherNodes(g, mothers) {
     const data = Object.values(mothers);
 
-    const sel = g.selectAll(".mother-node")
-      .data(data, d => d.id);
-
-    const enter = sel.enter()
+    const nodes = g.selectAll(".node-mother")
+      .data(data, d => d.id)
+      .enter()
       .append("g")
-      .attr("class", "mother-node")
-      .attr("transform", d => `translate(${d.x},${d.y})`);
+      .attr("class", "node node-mother")
+      .attr("transform", m => `translate(${m.x},${m.y})`);
 
-    enter.append("rect")
-      .attr("x", -NODE_WIDTH / 2)
-      .attr("y", -NODE_HEIGHT / 2)
-      .attr("width", NODE_WIDTH)
-      .attr("height", NODE_HEIGHT)
+    nodes.append("rect")
+      .attr("x", -35)
+      .attr("y", -45)
+      .attr("width", 70)
+      .attr("height", 90)
       .attr("rx", 10)
       .attr("ry", 10)
-      .attr("fill", "#ffeaea")
-      .attr("stroke", "#ff6666");
+      .attr("fill", "#ffe0e6")
+      .attr("stroke", "#d66");
 
-    enter.append("text")
+    nodes.append("text")
       .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "middle")
-      .attr("font-size", 12)
-      .text(d => d.name || d.id);
-
-    sel.exit().remove();
+      .attr("dy", "0.35em")
+      .style("font-size", "11px")
+      .text(m => {
+        if (!window.rawRows) return "";
+        const p = window.rawRows.find(r =>
+          String(r.ID).replace(".0", "") === m.id
+        );
+        return p ? p["Họ và tên"] : "";
+      });
   }
 
-  // =========================
-  // EXPORT
-  // =========================
+  // --------------------------------------------------
   return {
     render
   };
 
 })();
+
+
+
+
+
 
 
