@@ -29,17 +29,19 @@ const MotherLayer = (() => {
   function collectMothers(root, d) {
     const map = {};
     const allNodes = root.descendants();
-
+  
     allNodes.forEach(child => {
-      const motherID = child.data["ID me"];
       const fatherID = child.data["ID cha"];
-      if (!motherID || !fatherID) return;
-
+      if (!fatherID) return;
+  
       const father = allNodes.find(n => n.data.ID === fatherID);
       if (!father) return;
-
+  
+      const motherID = child.data["ID me"];
+      if (!motherID) return; // chỉ không tạo mẹ, KHÔNG bỏ con
+  
       const motherNode = allNodes.find(n => n.data.ID === motherID);
-
+  
       if (!map[motherID]) {
         map[motherID] = {
           id: motherID,
@@ -47,13 +49,13 @@ const MotherLayer = (() => {
           father,
           children: [],
           x: father.x,
-          y: father.y + d / 3   // mẹ nằm giữa cha – con
+          y: father.y + d / 3
         };
       }
-
+  
       map[motherID].children.push(child);
     });
-
+  
     return map;
   }
 
@@ -196,4 +198,5 @@ const MotherLayer = (() => {
   };
 
 })();
+
 
