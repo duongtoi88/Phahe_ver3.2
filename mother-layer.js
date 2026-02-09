@@ -24,30 +24,32 @@ window.MotherLayer = (function () {
   // Thu thập mẹ + ép lại tầng (CHUẨN 1/3 – 2/3)
   // --------------------------------------------------
   function collectMothers(root, d) {
-    const map = {};
-
-    root.descendants().forEach(child => {
-      const motherID = child.data.mother;
-      if (!motherID) return;
-
-      const father = child.parent;
-      if (!father) return;
-
-      if (!map[motherID]) {
-        map[motherID] = {
-          id: motherID,
-          father,
-          children: [],
-          x: father.x,
-          y: father.y + d / 3   // MẸ = 1/3 d
-        };
-      }
-
-      map[motherID].children.push(child);
-    });
-
-    return map;
-  }
+	  const map = {};
+	  const allNodes = root.descendants();
+	
+	  allNodes.forEach(child => {
+	    const motherID = child.data.mother;
+	    const fatherID = child.data.father;
+	    if (!motherID || !fatherID) return;
+	
+	    const father = allNodes.find(n => n.data.id === fatherID);
+	    if (!father) return;
+	
+	    if (!map[motherID]) {
+	      map[motherID] = {
+	        id: motherID,
+	        father,
+	        children: [],
+	        x: father.x,
+	        y: father.y + d / 3
+	      };
+	    }
+	
+	    map[motherID].children.push(child);
+	  });
+	
+	  return map;
+	}
 
   // --------------------------------------------------
   // Nhiều vợ → cùng 1 hàng ngang
@@ -179,6 +181,7 @@ window.MotherLayer = (function () {
   };
 
 })();
+
 
 
 
