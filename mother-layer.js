@@ -98,6 +98,7 @@ window.MotherLayer = (function () {
 		  const children = m.children;
 		if (!Number.isFinite(d)) return;
 		  const yBranch = m.y + (d * 2 / 3) / 2;
+			const yBranchAdj = yBranch - 20;
 		  const minX = Math.min(...children.map(c => c.x));
 		  const maxX = Math.max(...children.map(c => c.x));
 
@@ -109,36 +110,55 @@ window.MotherLayer = (function () {
 			.attr("stroke-width", 2)
 			.attr("d", `
 			  M ${m.x},${m.y + 60}
-			  V ${yBranch-10}
+			  V ${yBranchAdj}
 			`);
 
 		  // 2️⃣ Đường ngang CHUNG nối các con
-		  g.append("path")
-			.attr("class", "link link-children-horizontal")
-			.attr("fill", "none")
-			.attr("stroke", "#555")
-			.attr("stroke-width", 2)
-			.attr("d", `
-			  M ${minX},${yBranch}
-			  H ${maxX}
-			`);
-
-		  // 3️⃣ Các nhánh dọc từ đường ngang xuống từng con
-		  children.forEach(c => {
-			g.append("path")
-			  .attr("class", "link link-child-vertical")
-			  .attr("fill", "none")
-			  .attr("stroke", "#555")
-			  .attr("stroke-width", 2)
-			  .attr("d", `
-				M ${c.x},${yBranch}
-				V ${c.y - 60}
-			  `);
-		  });
-		}
-    });
-  }
-
+			// ===== MẸ → CON =====
+			if (children.length === 1) {
+			  // CHỈ 1 CON → KHÔNG VẼ ĐƯỜNG NGANG
+			  const c = children[0];
+			
+			  g.append("path")
+			    .attr("class", "link link-mother-single-child")
+			    .attr("fill", "none")
+			    .attr("stroke", "#555")
+			    .attr("stroke-width", 2)
+			    .attr("d", `
+			      M ${m.x},${yBranchAdj}
+			      V ${c.y - 60}
+			    `);
+			
+			} else {
+			  // NHIỀU CON → VẼ ĐƯỜNG NGANG CHUNG
+			  const minX = Math.min(...children.map(c => c.x));
+			  const maxX = Math.max(...children.map(c => c.x));
+			
+			  // Đường ngang
+			  g.append("path")
+			    .attr("class", "link link-children-horizontal")
+			    .attr("fill", "none")
+			    .attr("stroke", "#555")
+			    .attr("stroke-width", 2)
+			    .attr("d", `
+			      M ${minX},${yBranchAdj}
+			      H ${maxX}
+			    `);
+			
+			  // Nhánh dọc xuống từng con
+			  children.forEach(c => {
+			    g.append("path")
+			      .attr("class", "link link-child-vertical")
+			      .attr("fill", "none")
+			      .attr("stroke", "#555")
+			      .attr("stroke-width", 2)
+			      .attr("d", `
+			        M ${c.x},${yBranchAdj}
+			        V ${c.y - 60}
+			      `);
+			  });
+			}
+			
   // --------------------------------------------------
   // Vẽ node mẹ
   // --------------------------------------------------
@@ -181,6 +201,7 @@ window.MotherLayer = (function () {
   };
 
 })();
+
 
 
 
