@@ -177,10 +177,10 @@ function drawMotherLinks(g, mothers, d) {
 	    .attr("fill", "#ffe5e5")
 	    .attr("stroke", "#ff6666");
 	
-	  enter.append("text")
-	    .attr("text-anchor", "middle")
-	    .attr("dominant-baseline", "middle")
-	    .text(d => d.name || d.id);
+		enter.append("text")
+		  .attr("text-anchor", "middle")
+		  .attr("dominant-baseline", "middle")
+		  .text(d => d.name);
 	
 	  group.exit().remove();
 	}
@@ -191,6 +191,7 @@ function drawMotherLinks(g, mothers, d) {
   };
 
 })();
+
 
 
 
