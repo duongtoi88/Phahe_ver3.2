@@ -67,6 +67,7 @@ window.MotherLayer = (function () {
       const spacing = 120;
       wives.forEach((m, i) => {
         m.x = m.father.x + (i - (wives.length - 1) / 2) * spacing;
+		m.y += i * 5; // vợ sau thấp hơn vợ trước 5px
       });
     });
   }
@@ -79,16 +80,15 @@ window.MotherLayer = (function () {
       const f = m.father;
 
       // CHA → MẸ (1/3 d)
-      g.append("path")
-        .attr("class", "link link-father-mother")
-        .attr("fill", "none")
-        .attr("stroke", "#555")
-        .attr("stroke-width", 2)
-        .attr("d", `
-          M ${f.x},${f.y+60}
-          V ${m.y-60}
-          H ${m.x}
-        `);
+		g.append("path")
+		  .attr("class", "link link-father-mother")
+		  .attr("fill", "none")
+		  .attr("stroke", "#555")
+		  .attr("stroke-width", 2)
+		  .attr("d", `
+		    M ${f.x},${f.y + 60}
+		    V ${m.y - 60}
+		  `);
 
       // MẸ → CON (2/3 d)
     // ===== MẸ → CÁC CON (VẼ 1 TRỤC CHUNG) =====
@@ -107,7 +107,7 @@ window.MotherLayer = (function () {
 			.attr("stroke-width", 2)
 			.attr("d", `
 			  M ${m.x},${m.y + 60}
-			  V ${yBranch}
+			  V ${yBranch-10}
 			`);
 
 		  // 2️⃣ Đường ngang CHUNG nối các con
@@ -179,6 +179,7 @@ window.MotherLayer = (function () {
   };
 
 })();
+
 
 
 
