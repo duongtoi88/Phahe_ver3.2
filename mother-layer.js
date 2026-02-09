@@ -23,31 +23,25 @@ window.MotherLayer = (function () {
   // --------------------------------------------------
   // Thu thập mẹ + ép lại tầng (CHUẨN 1/3 – 2/3)
   // --------------------------------------------------
-  // mother-layer v1.3.6 – MATCH EXCEL
-	function collectMothers(root, d) {
+  function collectMothers(root, d) {
 	  const map = {};
 	  const allNodes = root.descendants();
 	
 	  allNodes.forEach(child => {
-	    const motherID = child.data["ID me"];
-	    const fatherID = child.data["ID cha"];
+	    const motherID = child.data.mother;
+	    const fatherID = child.data.father;
 	    if (!motherID || !fatherID) return;
 	
-	    // tìm cha theo ID cha
-	    const father = allNodes.find(n => n.data.ID === fatherID);
+	    const father = allNodes.find(n => n.data.id === fatherID);
 	    if (!father) return;
-	
-	    // tìm mẹ theo ID me (để lấy TÊN)
-	    const motherNode = allNodes.find(n => n.data.ID === motherID);
 	
 	    if (!map[motherID]) {
 	      map[motherID] = {
 	        id: motherID,
-	        name: motherNode ? motherNode.data["Họ và tên"] : String(motherID),
 	        father,
 	        children: [],
 	        x: father.x,
-	        y: father.y + d / 3
+	        y: father.y + d / 3   // MẸ ở 1/3 khoảng cha–con
 	      };
 	    }
 	
@@ -85,7 +79,7 @@ window.MotherLayer = (function () {
   // --------------------------------------------------
   // mother-layer v1.3.2
 function drawMotherLinks(g, mothers, d) {
-  const NODE_HALF_H = 15; // 👈 nửa chiều cao node (phải khớp UI)
+  const NODE_HALF_H = d*0.15; // 👈 nửa chiều cao node (phải khớp UI)
 
   Object.values(mothers).forEach(m => {
     const f = m.father;
@@ -197,7 +191,6 @@ function drawMotherLinks(g, mothers, d) {
   };
 
 })();
-
 
 
 
