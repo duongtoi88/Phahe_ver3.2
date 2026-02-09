@@ -78,71 +78,73 @@ window.MotherLayer = (function () {
   // Vẽ đường nối GẤP KHÚC – ĐÚNG TỌA ĐỘ THẬT
   // --------------------------------------------------
 // mother-layer v1.3.3
+	// mother-layer v1.3.2
 	function drawMotherLinks(g, mothers, d) {
-		  Object.values(mothers).forEach(m => {
-		    const f = m.father;
-		
-		    // ===== CHA → MẸ (LUÔN VẼ) =====
-		    g.append("path")
-		      .attr("class", "link link-father-mother")
-		      .attr("fill", "none")
-		      .attr("stroke", "#555")
-		      .attr("stroke-width", 2)
-		      .attr("d", `
-		        M ${f.x},${f.y + 60}
-		        V ${m.y - 60}
-		      `);
-		
-		    // ⛔ KHÔNG CÓ CON → KHÔNG VẼ MẸ–CON
-		    if (!m.children || m.children.length === 0) return;
-		
-		    const children = m.children;
-		
-		    // ===== TÍNH TRỤC CHUNG =====
-		    const yBranch = m.y + (d * 2 / 3) / 2;
-		    const yBranchAdj = yBranch - 10;
-		
-		    // luôn tính X dựa trên mẹ + con (kể cả 1 con)
-		    const xs = [m.x, ...children.map(c => c.x)];
-		    const minX = Math.min(...xs);
-		    const maxX = Math.max(...xs);
-		
-		    // ===== 1️⃣ DỌC: MẸ → TRỤC =====
-		    g.append("path")
-		      .attr("class", "link link-mother-branch")
-		      .attr("fill", "none")
-		      .attr("stroke", "#555")
-		      .attr("stroke-width", 2)
-		      .attr("d", `
-		        M ${m.x},${m.y + 60}
-		        V ${yBranchAdj}
-		      `);
-		
-		    // ===== 2️⃣ NGANG: TRỤC CHUNG =====
-		    g.append("path")
-		      .attr("class", "link link-children-horizontal")
-		      .attr("fill", "none")
-		      .attr("stroke", "#555")
-		      .attr("stroke-width", 2)
-		      .attr("d", `
-		        M ${minX},${yBranchAdj}
-		        H ${maxX}
-		      `);
-		
-		    // ===== 3️⃣ DỌC: TRỤC → TỪNG CON =====
-		    children.forEach(c => {
-		      g.append("path")
-		        .attr("class", "link link-child-vertical")
-		        .attr("fill", "none")
-		        .attr("stroke", "#555")
-		        .attr("stroke-width", 2)
-		        .attr("d", `
-		          M ${c.x},${yBranchAdj}
-		          V ${c.y - 60}
-		        `);
-		    });
-		  });
-		}
+	  const NODE_HALF_H = 30; // 👈 nửa chiều cao node (phải khớp UI)
+	
+	  Object.values(mothers).forEach(m => {
+	    const f = m.father;
+	
+	    /* ========= CHA → MẸ (1/3 d) ========= */
+	    g.append("path")
+	      .attr("class", "link link-father-mother")
+	      .attr("fill", "none")
+	      .attr("stroke", "#555")
+	      .attr("stroke-width", 2)
+	      .attr("d", `
+	        M ${f.x},${f.y + NODE_HALF_H}
+	        V ${m.y - NODE_HALF_H}
+	      `);
+	
+	    /* ======= KHÔNG CÓ CON → DỪNG ======= */
+	    if (!m.children || m.children.length === 0) return;
+	
+	    const children = m.children;
+	
+	    /* ========= TRỤC CHUNG (2/3 d) ========= */
+	    const yBranch = m.y + (d * 2 / 3) / 2;
+	    const yJoint = yBranch; // 👈 DÙNG 1 MỐC DUY NHẤT, KHÔNG TRỪ LỆCH
+	
+	    const xs = [m.x, ...children.map(c => c.x)];
+	    const minX = Math.min(...xs);
+	    const maxX = Math.max(...xs);
+	
+	    /* ========= MẸ → TRỤC ========= */
+	    g.append("path")
+	      .attr("class", "link link-mother-branch")
+	      .attr("fill", "none")
+	      .attr("stroke", "#555")
+	      .attr("stroke-width", 2)
+	      .attr("d", `
+	        M ${m.x},${m.y + NODE_HALF_H}
+	        V ${yJoint}
+	      `);
+	
+	    /* ========= TRỤC NGANG ========= */
+	    g.append("path")
+	      .attr("class", "link link-children-horizontal")
+	      .attr("fill", "none")
+	      .attr("stroke", "#555")
+	      .attr("stroke-width", 2)
+	      .attr("d", `
+	        M ${minX},${yJoint}
+	        H ${maxX}
+	      `);
+	
+	    /* ========= TRỤC → CON ========= */
+	    children.forEach(c => {
+	      g.append("path")
+	        .attr("class", "link link-child-vertical")
+	        .attr("fill", "none")
+	        .attr("stroke", "#555")
+	        .attr("stroke-width", 2)
+	        .attr("d", `
+	          M ${c.x},${yJoint}
+	          V ${c.y - NODE_HALF_H}
+	        `);
+	    });
+	  });
+	}
 
   // --------------------------------------------------
   // Vẽ node mẹ
@@ -183,6 +185,7 @@ window.MotherLayer = (function () {
   };
 
 })();
+
 
 
 
