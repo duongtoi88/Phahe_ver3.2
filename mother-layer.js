@@ -79,7 +79,7 @@ window.MotherLayer = (function () {
   // --------------------------------------------------
   // mother-layer v1.3.2
 function drawMotherLinks(g, mothers, d) {
-  const NODE_HALF_H = 30; // 👈 nửa chiều cao node (phải khớp UI)
+  const NODE_HALF_H = d*0.15; // 👈 nửa chiều cao node (phải khớp UI)
 
   Object.values(mothers).forEach(m => {
     const f = m.father;
@@ -191,6 +191,7 @@ function drawMotherLinks(g, mothers, d) {
   };
 
 })();
+
 
 
 
