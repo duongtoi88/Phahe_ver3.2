@@ -86,8 +86,7 @@ window.MotherLayer = (function () {
 	    const f = m.father;
 	
 	    /* ========= CHA → MẸ (1/3 d) ========= */
-	   // mother-layer v1.3.3
-		const fatherBottomY = f.y + NODE_HALF_H;
+	   const fatherBottomY = f.y + NODE_HALF_H;
 		const motherTopY   = m.y - NODE_HALF_H;
 		const midY = fatherBottomY + (motherTopY - fatherBottomY) / 2;
 		
@@ -103,7 +102,6 @@ window.MotherLayer = (function () {
 		    V ${motherTopY}
 		  `);
 
-	
 	    /* ======= KHÔNG CÓ CON → DỪNG ======= */
 	    if (!m.children || m.children.length === 0) return;
 	
@@ -193,6 +191,7 @@ window.MotherLayer = (function () {
   };
 
 })();
+
 
 
 
