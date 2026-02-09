@@ -69,7 +69,7 @@ window.MotherLayer = (function () {
       const spacing = 120;
       wives.forEach((m, i) => {
         m.x = m.father.x + (i - (wives.length - 1) / 2) * spacing;
-		m.y += i * 5; // vợ sau thấp hơn vợ trước 5px
+		m.y += i * 8; // vợ sau thấp hơn vợ trước 8px
       });
     });
   }
@@ -77,103 +77,113 @@ window.MotherLayer = (function () {
   // --------------------------------------------------
   // Vẽ đường nối GẤP KHÚC – ĐÚNG TỌA ĐỘ THẬT
   // --------------------------------------------------
-  function drawMotherLinks(g, mothers,d) {
-    Object.values(mothers).forEach(m => {
-      const f = m.father;
-
-      // CHA → MẸ (1/3 d)
+// mother-layer v1.3.3
+	function drawMotherLinks(g, mothers, d) {
+	  const NODE_HALF_H = 60; // 👈 nửa chiều cao node (phải khớp UI)
+	
+	  Object.values(mothers).forEach(m => {
+	    const f = m.father;
+	
+	    /* ========= CHA → MẸ (1/3 d) ========= */
+	   // mother-layer v1.3.3
+		const fatherBottomY = f.y + NODE_HALF_H;
+		const motherTopY   = m.y - NODE_HALF_H;
+		const midY = fatherBottomY + (motherTopY - fatherBottomY) / 2;
+		
 		g.append("path")
 		  .attr("class", "link link-father-mother")
 		  .attr("fill", "none")
 		  .attr("stroke", "#555")
 		  .attr("stroke-width", 2)
-		  .attr("d", `
-		    M ${f.x},${f.y + 60}
-		    V ${m.y - 60}
-		  `);
+		  .attr(
+			  "d", 
+			  `M ${f.x},${fatherBottomY} V ${midY} H ${m.x} V ${motherTopY}`
+		  );
 
-      // MẸ → CON (2/3 d)
-    // ===== MẸ → CÁC CON (VẼ 1 TRỤC CHUNG) =====
-		if (m.children.length > 0) {
-		  const children = m.children;
-		if (!Number.isFinite(d)) return;
-		  const yBranch = m.y + (d * 2 / 3) / 2;
-		  const minX = Math.min(...children.map(c => c.x));
-		  const maxX = Math.max(...children.map(c => c.x));
+	
+	    /* ======= KHÔNG CÓ CON → DỪNG ======= */
+	    if (!m.children || m.children.length === 0) return;
+	
+	    const children = m.children;
+	
+	    /* ========= TRỤC CHUNG (2/3 d) ========= */
+	    const yBranch = m.y + (d * 2 / 3) ;
+	    const yJoint = yBranch; // 👈 DÙNG 1 MỐC DUY NHẤT, KHÔNG TRỪ LỆCH
+	
+	    const xs = [m.x, ...children.map(c => c.x)];
+	    const minX = Math.min(...xs);
+	    const maxX = Math.max(...xs);
+	
+	    /* ========= MẸ → TRỤC ========= */
+	    g.append("path")
+	      .attr("class", "link link-mother-branch")
+	      .attr("fill", "none")
+	      .attr("stroke", "#555")
+	      .attr("stroke-width", 2)
+	      .attr(
+			  "d", 
+				`M ${m.x},${m.y + NODE_HALF_H} V ${yJoint}`
+		  );
+	
+	    /* ========= TRỤC NGANG ========= */
+	    g.append("path")
+	      .attr("class", "link link-children-horizontal")
+	      .attr("fill", "none")
+	      .attr("stroke", "#555")
+	      .attr("stroke-width", 2)
+	      .attr(
+			  "d", 
+				`M ${minX},${yJoint} H ${maxX}`
+		  );
+	
+	    /* ========= TRỤC → CON ========= */
+	    children.forEach(c => {
+	      g.append("path")
+	        .attr("class", "link link-child-vertical")
+	        .attr("fill", "none")
+	        .attr("stroke", "#555")
+	        .attr("stroke-width", 2)
+	        .attr(
+				"d", 
+				`M ${c.x},${yJoint} V ${c.y - NODE_HALF_H}`
+			);
+	    });
+	  });
+	}
 
-		  // 1️⃣ Trục dọc từ mẹ xuống đường ngang
-		  g.append("path")
-			.attr("class", "link link-mother-branch")
-			.attr("fill", "none")
-			.attr("stroke", "#555")
-			.attr("stroke-width", 2)
-			.attr("d", `
-			  M ${m.x},${m.y + 60}
-			  V ${yBranch-10}
-			`);
-
-		  // 2️⃣ Đường ngang CHUNG nối các con
-		  g.append("path")
-			.attr("class", "link link-children-horizontal")
-			.attr("fill", "none")
-			.attr("stroke", "#555")
-			.attr("stroke-width", 2)
-			.attr("d", `
-			  M ${minX},${yBranch}
-			  H ${maxX}
-			`);
-
-		  // 3️⃣ Các nhánh dọc từ đường ngang xuống từng con
-		  children.forEach(c => {
-			g.append("path")
-			  .attr("class", "link link-child-vertical")
-			  .attr("fill", "none")
-			  .attr("stroke", "#555")
-			  .attr("stroke-width", 2)
-			  .attr("d", `
-				M ${c.x},${yBranch}
-				V ${c.y - 60}
-			  `);
-		  });
-		}
-    });
-  }
 
   // --------------------------------------------------
   // Vẽ node mẹ
   // --------------------------------------------------
-  function drawMotherNodes(g, mothers) {
-    const data = Object.values(mothers);
-
-    const nodes = g.selectAll(".node-mother")
-      .data(data, d => d.id)
-      .enter()
-      .append("g")
-      .attr("class", "node node-mother")
-      .attr("transform", m => `translate(${m.x},${m.y})`);
-
-    nodes.append("rect")
-      .attr("x", -35)
-      .attr("y", -45)
-      .attr("width", 70)
-      .attr("height", 90)
-      .attr("rx", 10)
-      .attr("ry", 10)
-      .attr("fill", "#ffe0e6")
-      .attr("stroke", "#d66");
-
-    nodes.append("text")
-      .attr("text-anchor", "middle")
-      .attr("dy", "0.35em")
-      .style("font-size", "11px")
-      .text(m => {
-        if (!window.rawRows) return "";
-        const p = window.rawRows.find(r =>
-          String(r.ID).replace(".0", "") === m.id
-        );
-        return p ? p["Họ và tên"] : "";
-      });
-  }
+  // mother-layer v1.3.3
+	function drawMotherNodes(g, mothers) {
+	  const nodes = Object.values(mothers);
+	
+	  const group = g.selectAll(".mother-node")
+	    .data(nodes, d => d.id);
+	
+	  const enter = group.enter()
+	    .append("g")
+	    .attr("class", "mother-node")
+	    .attr("transform", d => `translate(${d.x},${d.y})`);
+	
+	  enter.append("rect")
+	    .attr("x", -40)
+	    .attr("y", -30)
+	    .attr("width", 80)
+	    .attr("height", 60)
+	    .attr("rx", 10)
+	    .attr("ry", 10)
+	    .attr("fill", "#ffe5e5")
+	    .attr("stroke", "#ff6666");
+	
+	  enter.append("text")
+	    .attr("text-anchor", "middle")
+	    .attr("dominant-baseline", "middle")
+	    .text(d => d.name);
+	
+	  group.exit().remove();
+	}
 
   // --------------------------------------------------
   return {
@@ -181,6 +191,7 @@ window.MotherLayer = (function () {
   };
 
 })();
+
 
 
 
