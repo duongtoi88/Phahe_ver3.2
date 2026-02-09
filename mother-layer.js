@@ -93,72 +93,52 @@ window.MotherLayer = (function () {
 		  `);
 
       // MẸ → CON (2/3 d)
-    // ===== MẸ → CÁC CON (VẼ 1 TRỤC CHUNG) =====
-		if (m.children.length > 0) {
-		  const children = m.children;
-		if (!Number.isFinite(d)) return;
-		  const yBranch = m.y + (d * 2 / 3) / 2;
-			const yBranchAdj = yBranch - 20;
-		  const minX = Math.min(...children.map(c => c.x));
-		  const maxX = Math.max(...children.map(c => c.x));
-
-		  // 1️⃣ Trục dọc từ mẹ xuống đường ngang
+    // ===== MẸ → CON (LUÔN VẼ ĐƯỜNG NGANG) =====
+		const children = m.children;
+		
+		const yBranch = m.y + (d * 2 / 3) / 2;
+		const yBranchAdj = yBranch - 10;
+		
+		// X trái – phải: luôn tính cả mẹ + con
+		const xs = [m.x, ...children.map(c => c.x)];
+		const minX = Math.min(...xs);
+		const maxX = Math.max(...xs);
+		
+		// 1️⃣ Trục dọc từ mẹ xuống
+		g.append("path")
+		  .attr("class", "link link-mother-branch")
+		  .attr("fill", "none")
+		  .attr("stroke", "#555")
+		  .attr("stroke-width", 2)
+		  .attr("d", `
+		    M ${m.x},${m.y + 60}
+		    V ${yBranchAdj}
+		  `);
+		
+		// 2️⃣ Đường ngang (LUÔN VẼ)
+		g.append("path")
+		  .attr("class", "link link-children-horizontal")
+		  .attr("fill", "none")
+		  .attr("stroke", "#555")
+		  .attr("stroke-width", 2)
+		  .attr("d", `
+		    M ${minX},${yBranchAdj}
+		    H ${maxX}
+		  `);
+		
+		// 3️⃣ Nhánh dọc từ đường ngang xuống từng con
+		children.forEach(c => {
 		  g.append("path")
-			.attr("class", "link link-mother-branch")
-			.attr("fill", "none")
-			.attr("stroke", "#555")
-			.attr("stroke-width", 2)
-			.attr("d", `
-			  M ${m.x},${m.y + 60}
-			  V ${yBranchAdj}
-			`);
-
-		  // 2️⃣ Đường ngang CHUNG nối các con
-			// ===== MẸ → CON =====
-			if (children.length === 1) {
-			  // CHỈ 1 CON → KHÔNG VẼ ĐƯỜNG NGANG
-			  const c = children[0];
-			
-			  g.append("path")
-			    .attr("class", "link link-mother-single-child")
-			    .attr("fill", "none")
-			    .attr("stroke", "#555")
-			    .attr("stroke-width", 2)
-			    .attr("d", `
-			      M ${m.x},${yBranchAdj}
-			      V ${c.y - 60}
-			    `);
-			
-			} else {
-			  // NHIỀU CON → VẼ ĐƯỜNG NGANG CHUNG
-			  const minX = Math.min(...children.map(c => c.x));
-			  const maxX = Math.max(...children.map(c => c.x));
-			
-			  // Đường ngang
-			  g.append("path")
-			    .attr("class", "link link-children-horizontal")
-			    .attr("fill", "none")
-			    .attr("stroke", "#555")
-			    .attr("stroke-width", 2)
-			    .attr("d", `
-			      M ${minX},${yBranchAdj}
-			      H ${maxX}
-			    `);
-			
-			  // Nhánh dọc xuống từng con
-			  children.forEach(c => {
-			    g.append("path")
-			      .attr("class", "link link-child-vertical")
-			      .attr("fill", "none")
-			      .attr("stroke", "#555")
-			      .attr("stroke-width", 2)
-			      .attr("d", `
-			        M ${c.x},${yBranchAdj}
-			        V ${c.y - 60}
-			      `);
-			  });
-			}
-			
+		    .attr("class", "link link-child-vertical")
+		    .attr("fill", "none")
+		    .attr("stroke", "#555")
+		    .attr("stroke-width", 2)
+		    .attr("d", `
+		      M ${c.x},${yBranchAdj}
+		      V ${c.y - 60}
+		    `);
+		});
+	
   // --------------------------------------------------
   // Vẽ node mẹ
   // --------------------------------------------------
@@ -201,6 +181,7 @@ window.MotherLayer = (function () {
   };
 
 })();
+
 
 
 
