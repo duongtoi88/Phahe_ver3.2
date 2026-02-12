@@ -64,7 +64,16 @@ window.MotherData = (function () {
     
         return orderA - orderB;
       });
-    
+
+      console.log("Sorting wives:", wives.map(w => {
+        const row = window.rawRows.find(r =>
+          String(r.ID).replace('.0','') === w.id
+        );
+        return {
+          name: w.name,
+          order: row?.["Thứ tự vợ"]
+        };
+      }));
       // 👇 Phần cũ giữ nguyên
       if (wives.length <= 1) return;
     
@@ -82,4 +91,5 @@ window.MotherData = (function () {
   return { collect };
 
 })();
+
 
