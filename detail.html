@@ -59,73 +59,53 @@
     let allRows = [];
 
     function renderPerson(id) {
-      id = String(id).replace('.0','').trim();
-  const person = allRows.find(p => p.ID === id);
-  if (!person) {
-    document.getElementById("info").innerHTML = "Không tìm thấy dữ liệu.";
-    return;
-  }
-
-  const isFemale = !person["Đinh"] || person["Đinh"] !== "x";
-  let spouse = [];
-  let allChildren = [];
-
-    if (isFemale) {
-      const husband = allRows.find(p => p.ID === person["ID chồng"]);
-      if (husband) spouse.push(husband);
-    } else {
-      spouse = allRows.filter(w => w["ID chồng"] === id);
-    }
     
-    // ✅ LẤY CON CHUNG CHO CẢ CHA & MẸ
-    allChildren = allRows.filter(c =>
-      c["ID cha"] === id || c["ID mẹ"] === id
-    );
+      id = String(id).replace('.0','').trim();
+    
+      const person = allRows.find(p => p.ID === id);
+    
+      if (!person) {
+        document.getElementById("info").innerHTML = "Không tìm thấy dữ liệu.";
+        return;
+      }
+    
+      const isFemale = String(person["Đinh"] || "").trim().toLowerCase() !== "x";
+    
+      let spouse = [];
+      let allChildren = [];
+    
+      // ===== LẤY VỢ / CHỒNG =====
+      if (isFemale) {
+        const husband = allRows.find(p => p.ID === person["ID chồng"]);
+        if (husband) spouse.push(husband);
+      } else {
+        spouse = allRows.filter(w => w["ID chồng"] === id);
+      }
+    
+      // ===== LẤY CON (CHA HOẶC MẸ) =====
+      allChildren = allRows.filter(c =>
+        c["ID cha"] === id || c["ID mẹ"] === id
+      );
+    
+      // Sắp xếp theo năm sinh
+      allChildren.sort((a, b) => {
+        const ay = parseInt(a["Năm sinh"]) || 9999;
+        const by = parseInt(b["Năm sinh"]) || 9999;
+        return ay - by;
+      });
+    
+      // ===== CHIA CON THEO TỪNG VỢ/CHỒNG =====
+      let conTheoTungVoChong = "";
+    
+      if (spouse.length) {
+    
+        conTheoTungVoChong = spouse.map(s => {
+    
+          const sid = s.ID;
+    
+          const kids = allChildren.filter(c =>
+            c["ID cha"] === (isFemale ? si
 
-
-  allChildren.sort((a, b) => {
-    const ay = parseInt(a["Năm sinh"]) || 9999;
-    const by = parseInt(b["Năm sinh"]) || 9999;
-    return ay - by;
-  });
-
-  const conTheoTungVoChong = spouse.length
-    ? spouse.map(s => {
-        const sid = String(s.ID).replace('.0', '');
-        const kids = allChildren.filter(c =>
-          c["ID cha"] === (isFemale ? sid : id) &&
-          c["ID mẹ"] === (isFemale ? id : sid)
-        );
-
-
-        const childrenList = kids.length
-          ? kids.map(c => `&nbsp;&nbsp;+ ${String(c["Họ và tên"] || "").replace(/^[-–+]+\s*/, "")}`).join("<br>")
-          : "&nbsp;&nbsp;<i>Không có con</i>";
-
-        return `- Với ${isFemale ? "chồng" : "vợ"}: ${s["Họ và tên"] || "-"}` + "<br>" + childrenList;
-      }).join("<br><br>")
-    : (allChildren.length
-        ? allChildren.map(c => `+ ${c["Họ và tên"] || ""}`).join("<br>")
-        : "");
-
-  const html = `
-    <div class="line"><b>${person["Họ và tên"] || "-"} – Đời ${person["Đời"] || "-"}</b></div>
-    <div class="line">${person["Năm sinh"] || "-"} – ${person["Năm mất"] || "-"}</div>
-    <div class="line"><img src="images/${id}.jpg" alt="${person["Họ và tên"]}" onerror="this.style.display='none'" /></div>
-    <div class="line"><b>Vợ/Chồng:</b><br>
-      ${spouse.length ? spouse.map(s => `- ${s["Họ và tên"] || "-"}`).join("<br>") : "-"}
-    </div>
-    <div class="line"><b>Con:</b><br>
-      ${conTheoTungVoChong}
-    </div>
-    <div class="line"><b>Thông tin chi tiết:</b><br>${person["Thông tin chi tiết"] || "-"}
-      ${person["Kỵ nhật"] ? `<br><b>Kỵ nhật:</b> ${person["Kỵ nhật"]}` : ""}
-      ${person["Táng"] ? `<br><b>Táng:</b> ${person["Táng"]}` : ""}
-    </div>
-  `;
-
-  document.getElementById("info").innerHTML = html;
-}
 
     fetch('input.xlsx')
       .then(res => res.arrayBuffer())
@@ -141,7 +121,6 @@
           "ID mẹ": String(r["ID mẹ"] || "").replace('.0', '').trim(),
           "ID chồng": String(r["ID chồng"] || "").replace('.0', '').trim()
         }));
-
 
         const select = document.getElementById("idSelector");
         allRows.forEach(p => {
@@ -171,3 +150,4 @@
 </body>
 
 </html>
+
