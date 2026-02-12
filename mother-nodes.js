@@ -10,7 +10,7 @@ window.MotherNodes = (function () {
     const enter = group.enter()
       .append("g")
       .attr("class", "mother-node")
-      .attr("transform", d => `translate(${d.x},${d.y})`);
+      .attr("transform", d => `translate(${d.x},${d.y+10})`);
 
     enter.append("rect")
       .attr("x", -40)
@@ -33,6 +33,7 @@ window.MotherNodes = (function () {
   return { render };
 
 })();
+
 
 
 
