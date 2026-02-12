@@ -137,7 +137,7 @@ function drawTree(data) {
 
   // Thiết lập layout dạng cây
   const nodeWidth = 120;
-  const nodeHeight = 360;
+  const nodeHeight = 480;
   const treeLayout = d3.tree().nodeSize([nodeWidth, nodeHeight]);
   treeLayout(root);
 
@@ -252,4 +252,5 @@ function showQuickTooltip(event, data) {
 function openDetailTab(id) {
   window.location.href = `detail.html?id=${id}`;
 }
+
 
