@@ -16,7 +16,7 @@ window.MotherNodes = (function () {
       .attr("x", -40)
       .attr("y", -30)
       .attr("width", 80)
-      .attr("height", 120)
+      .attr("height", 60)
       .attr("rx", 10)
       .attr("ry", 10)
       .attr("fill", "#ffe5e5")
@@ -33,4 +33,5 @@ window.MotherNodes = (function () {
   return { render };
 
 })();
+
 
