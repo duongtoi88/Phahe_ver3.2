@@ -74,13 +74,21 @@
         document.getElementById("controlSection").style.display = "none";
         document.getElementById("graveSection").style.display = "block";
 
-        if (!window.graveRendered) {
-          renderGraveTab();
-          window.graveRendered = true;
-        }
+      if (!window.graveRendered) {
+      
+        const waitData = setInterval(() => {
+          if (window.allPeople && window.allPeople.length) {
+            clearInterval(waitData);
+            renderGraveTab();
+            window.graveRendered = true;
+          }
+        }, 100);
+      }
+
       }
     }
   </script>
 
 </body>
 </html>
+
