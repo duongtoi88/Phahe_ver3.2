@@ -117,10 +117,10 @@ function renderPerson(id) {
 
       const sid = s.ID;
 
-      const kids = allChildren.filter(c =>
-        c["ID cha"] === (isFemale ? sid : id) &&
-        c["ID mẹ"] === (isFemale ? id : sid)
-      );
+      const kids = isFemale
+        ? allChildren.filter(c => c["ID mẹ"] === id)
+        : allChildren.filter(c => c["ID cha"] === id);
+
 
       const childrenList = kids.length
         ? kids.map(c => `&nbsp;&nbsp;+ ${c["Họ và tên"] || ""}`).join("<br>")
@@ -233,3 +233,4 @@ fetch('input.xlsx')
 </script>
 </body>
 </html>
+
