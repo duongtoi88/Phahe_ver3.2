@@ -7,7 +7,7 @@ function renderGraveTab() {
     return;
   }
 
-  const data = window.allPeople || [];
+ const data = window.rawRows || [];
 
   if (!data.length) {
     container.innerHTML = "Chưa có dữ liệu.";
@@ -40,3 +40,4 @@ function renderGraveTab() {
 
   container.innerHTML = html;
 }
+
