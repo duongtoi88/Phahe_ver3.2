@@ -49,31 +49,23 @@ window.MotherData = (function () {
     Object.values(byFather).forEach(wives => {
     
       // ✅ SẮP XẾP THEO "Thứ tự vợ" TRONG EXCEL
-      wives.sort((a, b) => {
-    
-        const rowA = window.rawRows.find(r =>
-          String(r.ID).replace('.0','') === a.id
-        );
-    
-        const rowB = window.rawRows.find(r =>
-          String(r.ID).replace('.0','') === b.id
-        );
-    
-        const orderA = parseInt(rowA?.["Thứ tự vợ"]) || 999;
-        const orderB = parseInt(rowB?.["Thứ tự vợ"]) || 999;
-    
-        return orderA - orderB;
-      });
+        wives.sort((a, b) => {
+        
+          const rowA = window.rawRows.find(r =>
+            String(r.ID).trim().replace('.0','') === String(a.id).trim()
+          );
+        
+          const rowB = window.rawRows.find(r =>
+            String(r.ID).trim().replace('.0','') === String(b.id).trim()
+          );
+        
+          const orderA = Number(rowA?.["Thứ tự vợ"]) || 999;
+          const orderB = Number(rowB?.["Thứ tự vợ"]) || 999;
+        
+          return orderA - orderB;
+        });
 
-      console.log("Sorting wives:", wives.map(w => {
-        const row = window.rawRows.find(r =>
-          String(r.ID).replace('.0','') === w.id
-        );
-        return {
-          name: w.name,
-          order: row?.["Thứ tự vợ"]
-        };
-      }));
+
       // 👇 Phần cũ giữ nguyên
       if (wives.length <= 1) return;
     
@@ -91,5 +83,6 @@ window.MotherData = (function () {
   return { collect };
 
 })();
+
 
 
