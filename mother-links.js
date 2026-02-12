@@ -3,7 +3,7 @@ window.MotherLinks = (function () {
   function render(g, mothers, d) {
 
     const NODE_HALF_FATHER = 60; // cha cao 120
-    const NODE_HALF_MOTHER = 60; // mẹ cao 120
+    const NODE_HALF_MOTHER = 30; // mẹ cao 60
 
     Object.values(mothers).forEach(m => {
 
@@ -20,7 +20,7 @@ window.MotherLinks = (function () {
       if (!m.children.length) return;
 
       /* TRỤC */
-      const yJoint = m.y + (d * 2 / 3);
+      const yJoint = m.y + (d * 1 / 3);
 
       const xs = [m.x, ...m.children.map(c => c.x)];
       const minX = Math.min(...xs);
@@ -58,4 +58,5 @@ window.MotherLinks = (function () {
   return { render };
 
 })();
+
 
