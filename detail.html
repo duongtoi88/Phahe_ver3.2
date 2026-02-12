@@ -59,6 +59,7 @@
     let allRows = [];
 
     function renderPerson(id) {
+      id = String(id).replace('.0','').trim();
   const person = allRows.find(p => p.ID === id);
   if (!person) {
     document.getElementById("info").innerHTML = "Không tìm thấy dữ liệu.";
@@ -69,14 +70,18 @@
   let spouse = [];
   let allChildren = [];
 
-  if (isFemale) {
-    const husband = allRows.find(p => String(p.ID).replace('.0', '') === String(person["ID chồng"]).replace('.0', ''));
-    if (husband) spouse.push(husband);
-    allChildren = allRows.filter(c => String(c["ID mẹ"]).replace('.0', '') === id);
-  } else {
-    spouse = allRows.filter(w => String(w["ID chồng"]).replace('.0', '') === id);
-    allChildren = allRows.filter(c => String(c["ID cha"]).replace('.0', '') === id);
-  }
+    if (isFemale) {
+      const husband = allRows.find(p => p.ID === person["ID chồng"]);
+      if (husband) spouse.push(husband);
+    } else {
+      spouse = allRows.filter(w => w["ID chồng"] === id);
+    }
+    
+    // ✅ LẤY CON CHUNG CHO CẢ CHA & MẸ
+    allChildren = allRows.filter(c =>
+      c["ID cha"] === id || c["ID mẹ"] === id
+    );
+
 
   allChildren.sort((a, b) => {
     const ay = parseInt(a["Năm sinh"]) || 9999;
@@ -87,9 +92,11 @@
   const conTheoTungVoChong = spouse.length
     ? spouse.map(s => {
         const sid = String(s.ID).replace('.0', '');
-        const kids = isFemale
-          ? allChildren.filter(c => String(c["ID cha"]).replace('.0', '') === sid)
-          : allChildren.filter(c => String(c["ID mẹ"]).replace('.0', '') === sid);
+        const kids = allChildren.filter(c =>
+          c["ID cha"] === (isFemale ? sid : id) &&
+          c["ID mẹ"] === (isFemale ? id : sid)
+        );
+
 
         const childrenList = kids.length
           ? kids.map(c => `&nbsp;&nbsp;+ ${String(c["Họ và tên"] || "").replace(/^[-–+]+\s*/, "")}`).join("<br>")
@@ -129,8 +136,12 @@
 
         allRows = json.map(r => ({
           ...r,
-          ID: String(r.ID).replace('.0', '')
+          ID: String(r.ID).replace('.0', '').trim(),
+          "ID cha": String(r["ID cha"] || "").replace('.0', '').trim(),
+          "ID mẹ": String(r["ID mẹ"] || "").replace('.0', '').trim(),
+          "ID chồng": String(r["ID chồng"] || "").replace('.0', '').trim()
         }));
+
 
         const select = document.getElementById("idSelector");
         allRows.forEach(p => {
@@ -158,4 +169,5 @@
       });
   </script>
 </body>
+
 </html>
