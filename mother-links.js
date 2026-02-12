@@ -3,7 +3,7 @@ window.MotherLinks = (function () {
   function render(g, mothers, d) {
 
     const NODE_HALF_FATHER = 60; // cha cao 120
-    const NODE_HALF_MOTHER = 30; // mẹ cao 60
+    const NODE_HALF_MOTHER = 60; // mẹ cao 120
 
     Object.values(mothers).forEach(m => {
 
@@ -58,3 +58,4 @@ window.MotherLinks = (function () {
   return { render };
 
 })();
+
