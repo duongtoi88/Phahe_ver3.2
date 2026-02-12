@@ -47,16 +47,39 @@ window.MotherData = (function () {
     });
 
     Object.values(byFather).forEach(wives => {
+    
+      // ✅ SẮP XẾP THEO "Thứ tự vợ" TRONG EXCEL
+      wives.sort((a, b) => {
+    
+        const rowA = window.rawRows.find(r =>
+          String(r.ID).replace('.0','') === a.id
+        );
+    
+        const rowB = window.rawRows.find(r =>
+          String(r.ID).replace('.0','') === b.id
+        );
+    
+        const orderA = parseInt(rowA?.["Thứ tự vợ"]) || 999;
+        const orderB = parseInt(rowB?.["Thứ tự vợ"]) || 999;
+    
+        return orderA - orderB;
+      });
+    
+      // 👇 Phần cũ giữ nguyên
       if (wives.length <= 1) return;
-
+    
       const spacing = 120;
+    
       wives.forEach((m, i) => {
         m.x = m.father.x + (i - (wives.length - 1) / 2) * spacing;
         m.y += i * 8;
       });
+    
     });
+
   }
 
   return { collect };
 
 })();
+
