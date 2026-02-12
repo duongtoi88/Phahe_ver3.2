@@ -5,6 +5,7 @@
   <title>Chi tiết thành viên</title>
   <base href="https://duongtoi88.github.io/Phahe_ver3.2/">
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
   <style>
     body {
       font-family: Arial;
@@ -43,111 +44,192 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
+
     <div class="line">
       <label for="idSelector"><b>Chọn ID tìm kiếm:</b></label><br>
       <select id="idSelector"></select>
     </div>
+
     <div id="info">Đang tải...</div>
+
     <div style="text-align: center; margin-top: 20px;">
-      <a id="backToTree" class="btn-back" href="#">← Quay lại Phả hệ</a>
+      <a id="backToTree" class="btn-back" href="index.html">
+        ← Quay lại Phả hệ
+      </a>
     </div>
+
   </div>
 
-  <script>
-    let allRows = [];
+<script>
 
-    function renderPerson(id) {
-    
-      id = String(id).replace('.0','').trim();
-    
-      const person = allRows.find(p => p.ID === id);
-    
-      if (!person) {
-        document.getElementById("info").innerHTML = "Không tìm thấy dữ liệu.";
-        return;
-      }
-    
-      const isFemale = String(person["Đinh"] || "").trim().toLowerCase() !== "x";
-    
-      let spouse = [];
-      let allChildren = [];
-    
-      // ===== LẤY VỢ / CHỒNG =====
-      if (isFemale) {
-        const husband = allRows.find(p => p.ID === person["ID chồng"]);
-        if (husband) spouse.push(husband);
-      } else {
-        spouse = allRows.filter(w => w["ID chồng"] === id);
-      }
-    
-      // ===== LẤY CON (CHA HOẶC MẸ) =====
-      allChildren = allRows.filter(c =>
-        c["ID cha"] === id || c["ID mẹ"] === id
+let allRows = [];
+
+/* ============================
+   RENDER PERSON
+============================ */
+function renderPerson(id) {
+
+  id = String(id).replace('.0','').trim();
+
+  const person = allRows.find(p => p.ID === id);
+
+  if (!person) {
+    document.getElementById("info").innerHTML = "Không tìm thấy dữ liệu.";
+    return;
+  }
+
+  const isFemale = String(person["Đinh"] || "")
+                    .trim()
+                    .toLowerCase() !== "x";
+
+  let spouse = [];
+  let allChildren = [];
+
+  // ===== LẤY VỢ / CHỒNG =====
+  if (isFemale) {
+    const husband = allRows.find(p => p.ID === person["ID chồng"]);
+    if (husband) spouse.push(husband);
+  } else {
+    spouse = allRows.filter(w => w["ID chồng"] === id);
+  }
+
+  // ===== LẤY CON (CHA HOẶC MẸ) =====
+  allChildren = allRows.filter(c =>
+    c["ID cha"] === id || c["ID mẹ"] === id
+  );
+
+  // Sắp xếp theo năm sinh
+  allChildren.sort((a, b) => {
+    const ay = parseInt(a["Năm sinh"]) || 9999;
+    const by = parseInt(b["Năm sinh"]) || 9999;
+    return ay - by;
+  });
+
+  // ===== CHIA CON THEO TỪNG VỢ/CHỒNG =====
+  let conTheoTungVoChong = "";
+
+  if (spouse.length) {
+
+    conTheoTungVoChong = spouse.map(s => {
+
+      const sid = s.ID;
+
+      const kids = allChildren.filter(c =>
+        c["ID cha"] === (isFemale ? sid : id) &&
+        c["ID mẹ"] === (isFemale ? id : sid)
       );
-    
-      // Sắp xếp theo năm sinh
-      allChildren.sort((a, b) => {
-        const ay = parseInt(a["Năm sinh"]) || 9999;
-        const by = parseInt(b["Năm sinh"]) || 9999;
-        return ay - by;
-      });
-    
-      // ===== CHIA CON THEO TỪNG VỢ/CHỒNG =====
-      let conTheoTungVoChong = "";
-    
-      if (spouse.length) {
-    
-        conTheoTungVoChong = spouse.map(s => {
-    
-          const sid = s.ID;
-    
-          const kids = allChildren.filter(c =>
-            c["ID cha"] === (isFemale ? si
+
+      const childrenList = kids.length
+        ? kids.map(c => `&nbsp;&nbsp;+ ${c["Họ và tên"] || ""}`).join("<br>")
+        : "&nbsp;&nbsp;<i>Không có con</i>";
+
+      return `- Với ${isFemale ? "chồng" : "vợ"}: ${s["Họ và tên"] || "-"}` +
+             "<br>" + childrenList;
+
+    }).join("<br><br>");
+
+  } else {
+
+    if (allChildren.length) {
+      conTheoTungVoChong = allChildren
+        .map(c => `+ ${c["Họ và tên"] || ""}`)
+        .join("<br>");
+    } else {
+      conTheoTungVoChong = "<i>Không có con</i>";
+    }
+  }
+
+  // ===== HTML =====
+
+  const html = `
+    <div class="line">
+      <b>${person["Họ và tên"] || "-"} – Đời ${person["Đời"] || "-"}</b>
+    </div>
+
+    <div class="line">
+      ${person["Năm sinh"] || "-"} – ${person["Năm mất"] || "-"}
+    </div>
+
+    <div class="line">
+      <img src="images/${id}.jpg"
+           alt="${person["Họ và tên"]}"
+           onerror="this.style.display='none'" />
+    </div>
+
+    <div class="line">
+      <b>Vợ/Chồng:</b><br>
+      ${spouse.length
+        ? spouse.map(s => `- ${s["Họ và tên"] || "-"}`).join("<br>")
+        : "-"
+      }
+    </div>
+
+    <div class="line">
+      <b>Con:</b><br>
+      ${conTheoTungVoChong}
+    </div>
+
+    <div class="line">
+      <b>Thông tin chi tiết:</b><br>
+      ${person["Thông tin chi tiết"] || "-"}
+      ${person["Kỵ nhật"] ? `<br><b>Kỵ nhật:</b> ${person["Kỵ nhật"]}` : ""}
+      ${person["Táng"] ? `<br><b>Táng:</b> ${person["Táng"]}` : ""}
+    </div>
+  `;
+
+  document.getElementById("info").innerHTML = html;
+}
 
 
-    fetch('input.xlsx')
-      .then(res => res.arrayBuffer())
-      .then(data => {
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(sheet);
+/* ============================
+   LOAD EXCEL
+============================ */
+fetch('input.xlsx')
+  .then(res => res.arrayBuffer())
+  .then(data => {
 
-        allRows = json.map(r => ({
-          ...r,
-          ID: String(r.ID).replace('.0', '').trim(),
-          "ID cha": String(r["ID cha"] || "").replace('.0', '').trim(),
-          "ID mẹ": String(r["ID mẹ"] || "").replace('.0', '').trim(),
-          "ID chồng": String(r["ID chồng"] || "").replace('.0', '').trim()
-        }));
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(sheet);
 
-        const select = document.getElementById("idSelector");
-        allRows.forEach(p => {
-          const opt = document.createElement("option");
-          opt.value = p.ID;
-          opt.text = `${p["Họ và tên"] || "(Không tên)"} (Đời ${p["Đời"] || "-"}) – ${p.ID}`;
-          select.appendChild(opt);
-        });
+    // CHUẨN HÓA ID
+    allRows = json.map(r => ({
+      ...r,
+      ID: String(r.ID).replace('.0','').trim(),
+      "ID cha": String(r["ID cha"] || "").replace('.0','').trim(),
+      "ID mẹ": String(r["ID mẹ"] || "").replace('.0','').trim(),
+      "ID chồng": String(r["ID chồng"] || "").replace('.0','').trim()
+    }));
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get("id") || allRows[0].ID;
-        select.value = id;
-        renderPerson(id);
+    const select = document.getElementById("idSelector");
 
-        const backBtn = document.getElementById("backToTree");
-        if (backBtn) backBtn.href = `index.html`;
-        
-        select.onchange = () => {
-          const selectedID = select.value;
-          renderPerson(selectedID);
-        };
-      })
-      .catch(() => {
-        document.getElementById("info").innerHTML = "Không thể tải dữ liệu.";
-      });
-  </script>
+    allRows.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.ID;
+      opt.text =
+        `${p["Họ và tên"] || "(Không tên)"} ` +
+        `(Đời ${p["Đời"] || "-"}) – ${p.ID}`;
+      select.appendChild(opt);
+    });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get("id") || allRows[0].ID;
+
+    select.value = id;
+    renderPerson(id);
+
+    select.onchange = () => {
+      renderPerson(select.value);
+    };
+
+  })
+  .catch(() => {
+    document.getElementById("info").innerHTML = "Không thể tải dữ liệu.";
+  });
+
+</script>
 </body>
-
 </html>
-
