@@ -3,79 +3,84 @@
 <head>
   <meta charset="UTF-8">
   <title>Phả hệ Dương Danh</title>
+
   <base href="https://duongtoi88.github.io/Phahe_ver3.2/">
-  <!-- Nhúng SheetJS để đọc file Excel -->
+
+  <!-- SheetJS -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-  <!-- Nhúng D3.js để vẽ sơ đồ -->
+
+  <!-- D3 -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <!-- Core scripts -->
   <script defer src="app.js"></script>
   <script defer src="mother-data.js"></script>
-	<script defer src="mother-links.js"></script>
-	<script defer src="mother-nodes.js"></script>
+  <script defer src="mother-links.js"></script>
+  <script defer src="mother-nodes.js"></script>
+
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+
   <h2>Phả hệ Dương Danh ở Quốc Oai</h2>
 
-	<!-- Tabs -->
-	<div class="tabs">
-	  <button class="tab-btn active" onclick="showTab('tree')">Cây gia phả</button>
-	  <button class="tab-btn" onclick="showTab('grave')">Mộ chí</button>
-	</div>
+  <!-- TAB (không style) -->
+  <div>
+    <button onclick="switchTab('tree')">CÂY GIA PHẢ</button>
+    <button onclick="switchTab('grave')">MỘ CHÍ</button>
+  </div>
 
-	<!-- ================= TAB CÂY ================= -->
-	<div id="treeTab" class="tab-content active">
+  <!-- PHẦN ĐIỀU KHIỂN -->
+  <div id="controlSection">
 
-	  <!-- Dropdown chọn ID -->
-	  <div style="margin: 10px;">
-		<label for="rootSelector"><b>Chọn ID gốc:</b></label>
-	  </div>
+    <div style="margin: 10px;">
+      <label for="rootSelector"><b>Chọn ID gốc:</b></label>
+      <!-- select sẽ được app.js thêm -->
+    </div>
 
-	  <!-- Checkbox -->
-	  <div style="margin: 0 10px 10px;">
-		<label>
-		  <input type="checkbox" id="showGirls" style="margin-right: 6px;">
-		  Cả Nam & Nữ
-		</label>
-	  </div>
+    <div style="margin: 0 10px 10px;">
+      <label>
+        <input type="checkbox" id="showGirls" style="margin-right: 6px;">
+        Cả Nam & Nữ
+      </label>
+    </div>
 
-	  <!-- Khu vực vẽ cây -->
-	  <div id="tree-container"
-		   style="overflow-x: auto; overflow-y: auto; white-space: nowrap; height: 100vh;">
-	  </div>
+  </div>
 
-	</div>
+  <!-- TREE -->
+  <div id="tree-container"
+       style="overflow-x: auto; overflow-y: auto; white-space: nowrap; height: 100vh;">
+  </div>
 
-	<!-- ================= TAB MỘ CHÍ ================= -->
-	<div id="graveTab" class="tab-content">
-	  <div id="graveContainer" style="padding: 10px;"></div>
-	</div>
+  <!-- GRAVE -->
+  <div id="graveSection" style="display:none;"></div>
 
-  <!-- Tooltip vẫn giữ lại để gợi ý khi hover nếu cần -->
+  <!-- Tooltip -->
   <div id="tooltip" class="tooltip" style="display: none;"></div>
-  
+
+  <!-- Grave script -->
   <script src="grave.js"></script>
 
-		<script>
-		function showTab(tab) {
+  <script>
+    function switchTab(tab) {
 
-		  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-		  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      if (tab === 'tree') {
+        document.getElementById("tree-container").style.display = "block";
+        document.getElementById("controlSection").style.display = "block";
+        document.getElementById("graveSection").style.display = "none";
+      } else {
+        document.getElementById("tree-container").style.display = "none";
+        document.getElementById("controlSection").style.display = "none";
+        document.getElementById("graveSection").style.display = "block";
 
-		  if (tab === 'tree') {
-			document.querySelectorAll('.tab-btn')[0].classList.add('active');
-			document.getElementById('treeTab').classList.add('active');
-		  } else {
-			document.querySelectorAll('.tab-btn')[1].classList.add('active');
-			document.getElementById('graveTab').classList.add('active');
-
-			if (!window.graveRendered) {
-			  renderGraveTab();
-			  window.graveRendered = true;
-			}
-		  }
-		}
-		</script>
+        if (!window.graveRendered) {
+          renderGraveTab();
+          window.graveRendered = true;
+        }
+      }
+    }
+  </script>
 
 </body>
 </html>
