@@ -1,6 +1,12 @@
 function renderGraveTab() {
 
-  const container = document.getElementById("graveContainer");
+  const container = document.getElementById("graveSection");
+
+  if (!container) {
+    console.error("Không tìm thấy graveSection trong DOM");
+    return;
+  }
+
   const data = window.allPeople || [];
 
   if (!data.length) {
@@ -10,59 +16,26 @@ function renderGraveTab() {
 
   const gravePeople = data.filter(p => p["Khu vực"]);
 
-  const grouped = {};
+  let html = "<h3>Danh sách mộ chí</h3>";
 
-  gravePeople.forEach(p => {
-    const area = p["Khu vực"].trim();
-    if (!grouped[area]) grouped[area] = [];
-    grouped[area].push(p);
-  });
+  gravePeople.forEach((p, index) => {
 
-  let html = "";
+    const lat = p["Tọa X"];
+    const lng = p["Tọa Y"];
 
-  Object.keys(grouped).forEach(area => {
+    let mapLink = "";
 
-    html += `<h3>Khu vực: ${area}</h3>`;
+    if (lat && lng) {
+      mapLink = `<a target="_blank" href="https://www.google.com/maps?q=${lat},${lng}">Google Map</a>`;
+    }
 
     html += `
-      <table>
-        <tr>
-          <th>STT</th>
-          <th>Họ và tên</th>
-          <th>Đời</th>
-          <th>Năm sinh - Năm mất</th>
-          <th>Vị trí</th>
-          <th>Chi tiết</th>
-        </tr>
+      <div style="margin-bottom:8px;">
+        ${index + 1}. ${p["Họ và tên"] || ""}
+        (${p["Năm sinh"] || ""} - ${p["Năm mất"] || ""})
+        ${mapLink}
+      </div>
     `;
-
-    grouped[area]
-      .sort((a, b) => (a["Thứ tự v"] || 0) - (b["Thứ tự v"] || 0))
-      .forEach((p, index) => {
-
-        const lat = p["Tọa X"];
-        const lng = p["Tọa Y"];
-
-        let mapCell = "—";
-
-        if (lat && lng) {
-          const mapLink = `https://www.google.com/maps?q=${lat},${lng}`;
-          mapCell = `<a href="${mapLink}" target="_blank">Google Map</a>`;
-        }
-
-        html += `
-          <tr>
-            <td>${index + 1}</td>
-            <td>${p["Họ và tên"] || ""}</td>
-            <td>${p["Đời"] || ""}</td>
-            <td>${p["Năm sinh"] || ""} - ${p["Năm mất"] || ""}</td>
-            <td>${mapCell}</td>
-            <td><a href="detail.html?id=${p["ID"]}">Xem</a></td>
-          </tr>
-        `;
-      });
-
-    html += "</table><br>";
   });
 
   container.innerHTML = html;
