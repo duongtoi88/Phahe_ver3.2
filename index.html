@@ -77,7 +77,7 @@
       if (!window.graveRendered) {
       
         const waitData = setInterval(() => {
-          if (window.allPeople && window.allPeople.length) {
+          if (window.rawRows && window.rawRows.length) {
             clearInterval(waitData);
             renderGraveTab();
             window.graveRendered = true;
@@ -91,4 +91,5 @@
 
 </body>
 </html>
+
 
