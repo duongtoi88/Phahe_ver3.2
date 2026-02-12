@@ -10,15 +10,23 @@ function renderGraveTab() {
     return;
   }
 
-  // Lọc những người có Khu vực
-  const gravePeople = data.filter(p => p["Khu vực"]);
+  // ===============================
+  // 1️⃣ CHỈ LẤY NGƯỜI CÓ NĂM MẤT
+  // ===============================
+  const gravePeople = data.filter(p => {
+    const death = p["Năm mất"];
+    const area = p["Khu vực"];
+    return area && death && String(death).trim() !== "";
+  });
 
   if (!gravePeople.length) {
     container.innerHTML = "Không có dữ liệu mộ chí.";
     return;
   }
 
-  // ===== GROUP THEO KHU VỰC =====
+  // ===============================
+  // 2️⃣ GROUP THEO KHU VỰC
+  // ===============================
   const grouped = {};
 
   gravePeople.forEach(p => {
@@ -33,8 +41,28 @@ function renderGraveTab() {
 
   let html = "";
 
-  // ===== RENDER TỪNG KHU =====
-  Object.keys(grouped).forEach(area => {
+  // ===============================
+  // 3️⃣ SẮP XẾP KHU VỰC
+  // "Khác" LUÔN Ở CUỐI
+  // ===============================
+  const sortedAreas = Object.keys(grouped).sort((a, b) => {
+
+    const aLower = a.toLowerCase();
+    const bLower = b.toLowerCase();
+
+    const aIsOther = aLower.includes("khác");
+    const bIsOther = bLower.includes("khác");
+
+    if (aIsOther && !bIsOther) return 1;
+    if (!aIsOther && bIsOther) return -1;
+
+    return a.localeCompare(b, 'vi');
+  });
+
+  // ===============================
+  // 4️⃣ RENDER
+  // ===============================
+  sortedAreas.forEach(area => {
 
     html += `<h3>Khu vực: ${area}</h3>`;
 
