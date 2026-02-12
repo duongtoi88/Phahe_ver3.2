@@ -88,8 +88,35 @@
       }
     }
   </script>
+  
+    <script>
+      window.addEventListener("load", function () {
+    
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedID = urlParams.get("select");
+    
+        if (!selectedID) return;
+    
+        // chờ đến khi rootSelector được tạo
+        const waitSelector = setInterval(() => {
+          const selector = document.getElementById("rootSelector");
+    
+          if (selector && selector.options.length > 0) {
+            clearInterval(waitSelector);
+    
+            selector.value = selectedID;
+    
+            // kích hoạt sự kiện change để vẽ lại cây
+            selector.dispatchEvent(new Event("change"));
+          }
+    
+        }, 100);
+    
+      });
+    </script>
 
 </body>
 </html>
+
 
 
