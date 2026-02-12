@@ -146,7 +146,18 @@
         renderPerson(id);
 
         const backBtn = document.getElementById("backToTree");
-        if (backBtn) backBtn.href = `index.html`;
+        
+        if (backBtn) {
+          const currentPerson = allRows.find(p => p.ID === id);
+          const fatherID = currentPerson?.["ID cha"];
+        
+          const targetID = fatherID
+            ? String(fatherID).replace('.0','').trim()
+            : id;
+        
+          backBtn.href = `index.html?root=${targetID}`;
+        }
+
         
         select.onchange = () => {
           const selectedID = select.value;
@@ -159,3 +170,4 @@
   </script>
 </body>
 </html>
+
